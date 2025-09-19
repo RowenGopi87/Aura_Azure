@@ -1,0 +1,28 @@
+Category,Resource Name,Azure Service,SKU/Tier,Configuration,Monthly Cost (USD),Priority,Dependencies
+Resource Management,aura-prod-rg,Resource Group,N/A,Location: East US 2,$0,1,None
+Resource Management,aura-dev-rg,Resource Group,N/A,Location: East US 2,$0,1,None
+Security & Identity,aura-keyvault,Azure Key Vault,Standard,Soft delete enabled,$3,1,aura-prod-rg
+Security & Identity,aura-entra-app,Microsoft Entra ID App Registration,N/A,Web app + API permissions,$0,1,Entra ID tenant
+Frontend Hosting,aura-frontend,Azure Static Web Apps,Standard,Custom domain + CI/CD,$9,2,aura-prod-rg
+Backend Services,aura-backend-plan,App Service Plan,B2 (Basic),Linux + 2 cores + 3.5GB RAM,$54.75,2,aura-prod-rg
+Backend Services,aura-backend,Azure App Service,B2 (Basic),Linux + Node.js 18 LTS,$0,2,aura-backend-plan + aura-keyvault
+AI Bridge Service,auracr,Azure Container Registry,Basic,Admin user enabled,$5,2,aura-prod-rg
+AI Bridge Service,aura-mcp-bridge,Azure Container Instances,1 vCPU + 1.5GB RAM,Linux + Python 3.11,$46.72,3,auracr + aura-vnet
+Database,aura-mariadb,Azure Database for MariaDB,B_Gen5_1 (Burstable),2 vCores + 4GB RAM + 32GB storage,$50.37,2,aura-prod-rg + aura-vnet
+AI Services,aura-openai,Azure OpenAI Service,S0 (Standard),GPT-4o + text-embedding-3-small,$200-500,3,aura-prod-rg
+Search & Vector,aura-search,Azure AI Search,Basic,1 search unit + 2GB storage,$250,3,aura-prod-rg
+Storage,aurastorage,Azure Storage Account,Standard_LRS,Hot tier + Blob storage,$5-20,2,aura-prod-rg
+Integration,aura-jira-logic,Azure Logic Apps,Consumption,Standard connectors,$10-50,4,aura-prod-rg
+AI Services,aura-doc-intelligence,Azure AI Document Intelligence,S0 (Standard),Form recognition,$20-100,4,aura-prod-rg
+Networking,aura-vnet,Virtual Network,N/A,Address space: 10.0.0.0/16,$0,1,aura-prod-rg
+Networking,aura-subnet-backend,Subnet,N/A,Address range: 10.0.1.0/24,$0,1,aura-vnet
+Networking,aura-subnet-data,Subnet,N/A,Address range: 10.0.2.0/24,$0,1,aura-vnet
+Networking,aura-nsg-backend,Network Security Group,N/A,HTTP/HTTPS inbound rules,$0,1,aura-subnet-backend
+Networking,aura-nsg-data,Network Security Group,N/A,MySQL inbound rules,$0,1,aura-subnet-data
+Monitoring,aura-insights,Application Insights,Per GB,Retention: 90 days,$10-30,3,aura-prod-rg
+DevOps,aura-devops,Azure DevOps Organization,Basic,5 users included,$6,4,N/A
+Testing,aura-test-vm,Azure Virtual Machine,B2s (Burstable),Linux + 2 vCPUs + 4GB RAM,$30,5,aura-prod-rg + aura-vnet
+Analytics,aura-powerbi,Power BI Embedded,A1,1GB memory,$750,5,aura-prod-rg
+Backup,aura-backup-vault,Recovery Services Vault,N/A,GRS (Geo-redundant),$5,4,aura-prod-rg
+
+

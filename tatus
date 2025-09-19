@@ -1,0 +1,5 @@
+[33mdefba23[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m feat: Add ARRIVE YAML integration with physical file storage and fix LLM configuration issues
+[33mc3f7308[m[33m ([m[1;33mtag: [m[1;33mv1.0.0-critical-path[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: Major repository cleanup and LLM provider configuration fixes
+[33m31f3d6a[m docs: Add Official SDK Integration Documentation
+[33ma390639[m feat: Restore Official SDK Integration - 100% Success Rate
+[33m691fef2[m feat: Complete Code Tab V1 implementation matching Design Tab exactly

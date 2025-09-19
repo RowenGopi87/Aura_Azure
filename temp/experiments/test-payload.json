@@ -1,0 +1,7 @@
+{
+  "systemPrompt": "You are a helpful UI/UX designer. Generate clean, modern HTML code.",
+  "userPrompt": "Create a simple hello world HTML page with a button.",
+  "framework": "react",
+  "llm_provider": "google",
+  "model": "gemini-2.5-pro"
+}

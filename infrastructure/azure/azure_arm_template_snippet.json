@@ -1,0 +1,243 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "AURA Azure Infrastructure Template - Core Resources",
+    "author": "SRE Team"
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "defaultValue": "prod",
+      "allowedValues": ["dev", "prod"],
+      "metadata": {
+        "description": "Environment name (dev or prod)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "administratorLogin": {
+      "type": "string",
+      "metadata": {
+        "description": "MariaDB administrator login"
+      }
+    },
+    "administratorPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "MariaDB administrator password"
+      }
+    }
+  },
+  "variables": {
+    "resourcePrefix": "[concat('aura-', parameters('environmentName'))]",
+    "vnetName": "[concat(variables('resourcePrefix'), '-vnet')]",
+    "keyVaultName": "[concat(variables('resourcePrefix'), '-kv-', uniqueString(resourceGroup().id))]",
+    "storageAccountName": "[concat('aurastorage', parameters('environmentName'), uniqueString(resourceGroup().id))]",
+    "appServicePlanName": "[concat(variables('resourcePrefix'), '-plan')]",
+    "appServiceName": "[concat(variables('resourcePrefix'), '-backend')]",
+    "mariaDbServerName": "[concat(variables('resourcePrefix'), '-mariadb')]",
+    "containerRegistryName": "[concat('auracr', parameters('environmentName'), uniqueString(resourceGroup().id))]",
+    "applicationInsightsName": "[concat(variables('resourcePrefix'), '-insights')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["10.0.0.0/16"]
+        },
+        "subnets": [
+          {
+            "name": "backend-subnet",
+            "properties": {
+              "addressPrefix": "10.0.1.0/24",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Web"
+                },
+                {
+                  "service": "Microsoft.Storage"
+                }
+              ]
+            }
+          },
+          {
+            "name": "data-subnet",
+            "properties": {
+              "addressPrefix": "10.0.2.0/24",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Sql"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-02-01",
+      "name": "[variables('keyVaultName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 90,
+        "enablePurgeProtection": true,
+        "enableRbacAuthorization": true,
+        "accessPolicies": []
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot",
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "B2",
+        "tier": "Basic"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('appServiceName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ],
+      "kind": "app,linux",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "NODE|18-lts",
+          "alwaysOn": true,
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "appSettings": [
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "18-lts"
+            },
+            {
+              "name": "NODE_ENV",
+              "value": "production"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DBforMariaDB/servers",
+      "apiVersion": "2018-06-01",
+      "name": "[variables('mariaDbServerName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "B_Gen5_1",
+        "tier": "Burstable",
+        "capacity": 1
+      },
+      "properties": {
+        "administratorLogin": "[parameters('administratorLogin')]",
+        "administratorLoginPassword": "[parameters('administratorPassword')]",
+        "version": "10.3",
+        "sslEnforcement": "Enabled",
+        "minimalTlsVersion": "TLS1_2",
+        "storageProfile": {
+          "storageMB": 32768,
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Disabled",
+          "storageAutogrow": "Enabled"
+        },
+        "createMode": "Default"
+      }
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('containerRegistryName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('applicationInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "RetentionInDays": 90,
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    }
+  ],
+  "outputs": {
+    "keyVaultName": {
+      "type": "string",
+      "value": "[variables('keyVaultName')]"
+    },
+    "appServiceName": {
+      "type": "string", 
+      "value": "[variables('appServiceName')]"
+    },
+    "mariaDbServerName": {
+      "type": "string",
+      "value": "[variables('mariaDbServerName')]"
+    },
+    "containerRegistryName": {
+      "type": "string",
+      "value": "[variables('containerRegistryName')]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountName')]"
+    }
+  }
+}
+
+

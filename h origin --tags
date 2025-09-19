@@ -1,0 +1,225 @@
+[33mtag v1.0.0-critical-path[m
+Tagger: Rowengopi87 <rowengopi@outlook.com>
+Date:   Fri Sep 19 09:35:39 2025 +0400
+
+Critical Path Milestone: Repository cleanup and LLM configuration fixes
+
+This tag marks a stable state before major architectural changes:
+
+Repository Cleanup:
+- Consolidated 43% of markdown files (42→24 files)
+- Organized documentation into logical structure
+- Created comprehensive troubleshooting guide
+- Fixed Python module imports and startup scripts
+
+LLM Provider Configuration:
+- Fixed V1 module LLM settings integration
+- Updated APIs to respect user-configured providers
+- Added proper primary/backup fallback logic
+- Enhanced debugging and logging
+
+Technical Foundation:
+- Stable MCP server integration
+- Working V1 settings persistence
+- Comprehensive API endpoint updates
+- Clean file organization structure
+
+This represents the last known working state before architectural refactoring.
+Use this tag to revert if needed: git checkout v1.0.0-critical-path
+
+[33mcommit c3f7308a9b1169ab6edb3cde01864f746f29974b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;33mtag: [m[1;33mv1.0.0-critical-path[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Rowengopi87 <rowengopi@outlook.com>
+Date:   Fri Sep 19 09:33:36 2025 +0400
+
+    feat: Major repository cleanup and LLM provider configuration fixes
+    
+    Repository Cleanup:
+    - Consolidated 18 duplicate/redundant markdown files (43% reduction: 42→24 files)
+    - Created comprehensive troubleshooting guide consolidating all fix documentation
+    - Organized documentation into logical structure (docs/, tests/docs/, etc.)
+    - Removed obsolete phase completion summaries and temporary files
+    - Fixed Python module naming (hyphens to underscores for proper imports)
+    
+    LLM Provider Configuration:
+    - Fixed V1 module LLM settings not being respected by API endpoints
+    - Updated generate-code and generate-design-code APIs to use user's V1 settings
+    - Added proper primary/backup provider fallback logic
+    - Enhanced logging to show which provider is being used
+    - Frontend now passes V1 module settings to APIs correctly
+    
+    Technical Changes:
+    - Updated API schemas to accept primaryProvider, primaryModel, backupProvider, backupModel
+    - Modified frontend code generation calls to retrieve and pass V1 settings
+    - Added comprehensive debug logging for troubleshooting LLM configuration
+    - Fixed MCP server import errors (mcp-server.py → mcp_server.py)
+    - Updated all startup scripts with correct file references
+    
+    Files Modified:
+    - src/app/api/generate-code/route.ts - Enhanced with V1 settings support
+    - src/app/api/generate-design-code/route.ts - Enhanced with V1 settings support
+    - src/app/v1/code/page.tsx - Now passes V1 settings to API
+    - src/app/v1/design/page.tsx - Now passes V1 settings to API
+    - src/store/settings-store.ts - Added debug logging for troubleshooting
+    - Multiple startup scripts updated with correct file references
+    - Comprehensive documentation reorganization and cleanup
+    
+    This ensures that user-configured LLM providers in V1 settings are properly respected across all modules.
+
+ README.md                                          |  36 [32m+[m[31m-[m
+ REPOSITORY_CLEANUP_SUMMARY.md                      | 197 [31m---------[m
+ .../database/aura-database.env                     |   0
+ .../database/aura-rag-config.env                   |   0
+ .../database/database-config.env.example           |   0
+ my.ini => config/database/my.ini                   |   0
+ config/environment/components.json                 |  21 [32m+[m
+ config/environment/env.template                    | 119 [32m++++++[m
+ config/environment/eslint.config.mjs               |  16 [32m+[m
+ config/environment/jest.config.js                  |  49 [32m+++[m
+ config/environment/playwright.config.ts            |  35 [32m++[m
+ config/environment/postcss.config.mjs              |   5 [32m+[m
+ docs/architecture/AURA_ARCHITECTURE_CORRECTIONS.md | 196 [32m+++++++++[m
+ docs/architecture/aura_azure_architecture.mmd      | 190 [32m+++++++++[m
+ docs/architecture/corrected_aura_architecture.mmd  | 146 [32m+++++++[m
+ docs/deployment/ENVIRONMENT_SETUP.md               | 320 [32m++++++++++++++[m
+ docs/fixes/BROWSER_FIX_SUMMARY.md                  |  73 [31m----[m
+ docs/fixes/BROWSER_PROFILE_FIX.md                  |  61 [31m---[m
+ docs/fixes/COMPLETE_DATE_FORMATTING_FIX.md         | 150 [31m-------[m
+ docs/fixes/DATE_FORMATTING_COMPLETE_GUIDE.md       | 226 [32m++++++++++[m
+ docs/fixes/DATE_FORMATTING_FIX.md                  | 163 [31m--------[m
+ docs/fixes/DEFINITIVE_BROWSER_FIX.md               |  56 [31m---[m
+ docs/fixes/FINAL_BROWSER_FIX_SUMMARY.md            |   1 [31m-[m
+ docs/fixes/MCP_CLIENT_ISOLATION_FIX.md             |  67 [31m---[m
+ docs/fixes/MCP_CONNECTION_FIX.md                   | 126 [31m------[m
+ docs/fixes/PACKAGE_COMPARISON_FIX.md               |   1 [31m-[m
+ docs/fixes/SSL_FIX_SUMMARY.md                      |  69 [31m---[m
+ docs/security/API_KEY_MANAGEMENT.md                | 192 [32m+++++++++[m
+ .../COMPREHENSIVE_TROUBLESHOOTING.md               | 315 [32m++++++++++++++[m
+ docs/troubleshooting/TROUBLESHOOTING_BROWSER.md    | 135 [31m------[m
+ docs/troubleshooting/TROUBLESHOOTING_SSL.md        | 161 [31m-------[m
+ .../user-guides/PLAYGROUND_SETUP.md                |   0
+ .../azure/azure_architecture_updates_summary.md    | 124 [32m++++++[m
+ .../azure/azure_arm_template_snippet.json          | 243 [32m+++++++++++[m
+ infrastructure/azure/azure_migration_guide.md      | 269 [32m++++++++++++[m
+ .../azure/azure_resources_provisioning_table.md    | 294 [32m+++++++++++++[m
+ .../azure/azure_resources_simple_table.csv         |  28 [32m++[m
+ .../azure/azure_services_mapping_corrected.md      |  90 [32m++++[m
+ .../docker/docker-mariadb-setup.md                 |   0
+ mcp/screenshots/emirates-homepage.png              | Bin [31m1103597[m -> [32m1018371[m bytes
+ mcp/screenshots/manage-booking-section.png         | Bin [31m0[m -> [32m1024675[m bytes
+ mcp/screenshots/manage-bookings-page.png           | Bin [31m133322[m -> [32m1024611[m bytes
+ mcp/screenshots/manage-bookings-tab.png            | Bin [31m0[m -> [32m1024341[m bytes
+ mcp/screenshots/manage-bookings.png                | Bin [31m0[m -> [32m1024675[m bytes
+ mcp/screenshots/step1-navigate-to-emirates.png     | Bin [31m0[m -> [32m1018375[m bytes
+ mcp/screenshots/step2-locate-manage-bookings.png   | Bin [31m0[m -> [32m218090[m bytes
+ ...l_mcp_servers.bat => start-all-mcp-servers.bat} |   0
+ ...ra_mcp_server.bat => start-jira-mcp-server.bat} |   0
+ ...start_mcp_servers.bat => start-mcp-servers.bat} |   0
+ mcp/test_browser_visibility.py                     |   1 [31m-[m
+ .../fix-ssl-certificates.py}                       |   0
+ .../tests/test-browser-visibility.py               |   0
+ .../test-create-jira-issue.py}                     |   0
+ .../test-jira-connection.py}                       |   0
+ mcp/{ => tests}/test-mcp-connection.py             |   0
+ scripts/simple_server.py                           |   1 [31m-[m
+ src/app/api/apply-suggestions/route.ts             |   2 [32m+[m[31m-[m
+ src/app/api/execute-test-case/route.ts             |   4 [32m+[m[31m-[m
+ src/app/api/generate-code/route.ts                 | 160 [32m+++++[m[31m--[m
+ src/app/api/generate-design-code/route.ts          | 152 [32m+++++[m[31m--[m
+ src/app/api/reverse-engineer-design/route.ts       | 202 [32m++++++[m[31m---[m
+ src/app/api/reverse-engineer/route.ts              | 103 [32m+++[m[31m--[m
+ src/app/api/review-code/route.ts                   |   2 [32m+[m[31m-[m
+ src/app/settings/page.tsx                          |  50 [32m++[m[31m-[m
+ src/app/v1/code/page.tsx                           |  68 [32m++[m[31m-[m
+ src/app/v1/components/v1-header.tsx                |   2 [32m+[m[31m-[m
+ src/app/v1/design/page.tsx                         |  23 [32m+[m[31m-[m
+ src/app/v1/layout.tsx                              |   4 [32m+[m
+ src/app/v1/requirements/page.tsx                   |  73 [32m+++[m[31m-[m
+ src/app/v1/settings/page.tsx                       | 465 [32m+++++++++++++++++++++[m
+ src/app/v1/test-cases/page.tsx                     | 142 [32m++++[m[31m---[m
+ src/app/v1/use-cases/page.tsx                      | 115 [32m+++[m[31m--[m
+ src/components/layout/layout.tsx                   |   4 [32m+[m
+ src/components/layout/right-panel.tsx              |  26 [32m++[m
+ src/components/ui/reverse-engineering-settings.tsx | 235 [32m+++++++++++[m
+ src/components/ui/v1-settings.tsx                  | 269 [32m++++++++++++[m
+ src/hooks/use-settings-initialization.ts           |  17 [32m+[m
+ src/lib/config/environment.ts                      | 245 [32m+++++++++++[m
+ src/lib/database/config.ts                         |  71 [32m+[m[31m---[m
+ src/lib/database/connection.ts                     |   2 [32m+[m[31m-[m
+ src/lib/reverse-engineering-settings.ts            |  79 [32m++++[m
+ src/store/settings-store.ts                        | 252 [32m++++++++++[m[31m-[m
+ start-aura-with-mcp-silent.bat                     |   2 [32m+[m[31m-[m
+ start-aura-with-mcp.bat                            |   2 [32m+[m[31m-[m
+ temp/analysis/direct-integration-example.ts        | 122 [32m++++++[m
+ temp/experiments/bypass-validation-test.py         |  89 [32m++++[m
+ temp/experiments/compare-prompts.py                |  88 [32m++++[m
+ temp/experiments/debug-test.py                     |  58 [32m+++[m
+ temp/experiments/direct-gemini-test.py             |  81 [32m++++[m
+ temp/experiments/simple-gemini-test.py             |  64 [32m+++[m
+ temp/experiments/simple-test.py                    |  55 [32m+++[m
+ temp/experiments/test-gemini-image.py              | 142 [32m+++++++[m
+ temp/experiments/test-google-api.py                |  45 [32m++[m
+ temp/experiments/test-parsing-logic.py             | 220 [32m++++++++++[m
+ temp/experiments/test-payload.json                 |   7 [32m+[m
+ temp/experiments/test-proper-prompts.py            |  93 [32m+++++[m
+ temp/experiments/test-working-prompt.py            |  55 [32m+++[m
+ tests/COMPARISON_ANALYSIS.md                       | 133 [31m------[m
+ tests/FINAL_ANALYSIS_SUMMARY.md                    | 179 [31m--------[m
+ tests/INTEGRATION_SUMMARY.md                       | 161 [31m-------[m
+ tests/capture-raw-logs.py                          |  52 [32m+++[m
+ tests/code-features-test.py                        | 197 [32m+++++++++[m
+ tests/comprehensive-all-features-test.py           | 381 [32m+++++++++++++++++[m
+ tests/comprehensive-sdk-test.py                    | 348 [32m+++++++++++++++[m
+ ...ures_test.py => corrected-all-features-test.py} |   0
+ tests/debug-design-generation.py                   | 160 [32m+++++++[m
+ tests/debug-gemini-pro.py                          | 272 [32m++++++++++++[m
+ tests/design-generation-focus-test.py              | 231 [32m++++++++++[m
+ tests/docs/CONSOLIDATED_TEST_ANALYSIS.md           | 180 [32m++++++++[m
+ tests/{ => docs}/README.md                         |   0
+ tests/final-comparison-test.py                     | 463 [32m++++++++++++++++++++[m
+ tests/gemini-direct-vs-mcp-comparison.py           | 390 [32m+++++++++++++++++[m
+ tests/google-gemini-image-test.py                  | 343 [32m+++++++++++++++[m
+ tests/official-gemini-sdk-test.py                  | 294 [32m+++++++++++++[m
+ tests/quick-fix-test.py                            | 124 [32m++++++[m
+ tests/single-gemini-pro-test.py                    |  44 [32m++[m
+ {database/setup => tools/database/docs}/README.md  |   0
+ .../database}/migrations/add-portfolios.sql        |   0
+ .../database}/setup/01-create-database.sql         |   0
+ .../database}/setup/02-create-users.sql            |   0
+ .../database}/setup/03-create-tables.sql           |   0
+ .../database}/setup/04-create-vector-stores.sql    |   0
+ .../database}/setup/05-create-procedures.sql       |   0
+ .../database}/setup/06-initial-data.sql            |   0
+ .../setup/08-add-quality-assessment-column.sql     |   0
+ .../database}/setup/10-create-aurav2-tables.sql    |   0
+ .../11-add-applied-recommendations-column.sql      |   0
+ .../setup/clone-database-to-playground.sql         |   0
+ .../database/setup/setup-aura-database.sql         |   0
+ .../setup/setup-aura-playground-database.sql       |   0
+ {database => tools/database}/setup/setup.bat       |   0
+ {database => tools/database}/setup/setup.ps1       |   0
+ .../database}/setup/verify-setup.sql               |   0
+ .../development}/clear-browser-processes.bat       |   0
+ .../development}/diagnose-mcp-connection.bat       |   0
+ .../scripts/development}/fix-ssl-issues.bat        |   0
+ .../scripts/development/fresh-start.ps1            |   0
+ tools/scripts/development/migrate-environment.js   | 283 [32m+++++++++++++[m
+ .../development}/migrate-quality-assessment.js     |   0
+ .../scripts/development}/restart-mcp-server.bat    |   0
+ .../scripts/development/restart-mcp-with-fix.bat   |   0
+ .../scripts/development/setup-mariadb.bat          |   0
+ .../scripts/development/setup-mariadb.ps1          |   0
+ .../scripts/development}/setup-mcp.bat             |   0
+ .../scripts/development/setup-playground.bat       |   0
+ .../scripts/development/setup-playground.ps1       |   0
+ .../scripts/development/simple-server.py           |   0
+ .../development}/start-integrated-simple.js        |   0
+ .../development}/start-integrated-terminals.js     |   0
+ .../scripts/development}/start-integrated.js       |   0
+ .../scripts/development}/start-simple.js           |   0
+ .../scripts/development}/stop-all-servers.bat      |   0
+ .../scripts/development}/stop-integrated.js        |   0
+ .../scripts/development}/test-llm-connection.py    |   0
+ .../scripts/development/test-playground.ps1        |   0
+ .../scripts/docs}/README-INTEGRATED.md             |   0
+ {scripts => tools/scripts/docs}/README.md          |   0
+ 157 files changed, 10193 insertions(+), 2108 deletions(-)

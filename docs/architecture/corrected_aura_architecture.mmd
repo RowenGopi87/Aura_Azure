@@ -1,0 +1,146 @@
+graph TD
+    %% Define Styles
+    classDef app fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef external fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px;
+    classDef llm fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+    classDef core fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef bridge fill:#ffebee,stroke:#c62828,stroke-width:2px;
+    classDef mcp fill:#ede7f6,stroke:#5e35b1,stroke-width:2px;
+    classDef database fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
+    classDef version fill:#fff8e1,stroke:#f57c00,stroke-width:1px,stroke-dasharray: 3 3;
+
+    %% --- TOP LEVEL: USERS & EXTERNAL SYSTEMS ---
+    subgraph "Users & External Systems"
+        direction LR
+        user([👤 User])
+        enterprise_tools["🏢 Enterprise Tools<br/>(JIRA, Confluence, etc.)"]
+    end
+
+    %% --- MIDDLE LAYER: THE AURA APPLICATION ---
+    subgraph "AURA Playground (Standalone Application Architecture)"
+        
+        %% Frontend Layer
+        aura_ui["🌐 Web UI<br/>(Next.js 15.3.5 Frontend)<br/>React 19 + TypeScript"]
+        
+        %% Version Architecture
+        subgraph "Dual Version Architecture"
+            direction LR
+            v1["📊 Version 1<br/>Traditional SDLC"]
+            v2["🚀 AuraV2<br/>AI-Enhanced + RBAC"]
+        end
+        
+        %% Backend Layer
+        subgraph "AURA Backend"
+            direction TB
+            
+            %% Next.js API Layer
+            subgraph "Next.js API Routes (Node.js)"
+                direction TB
+                api_crud["📝 CRUD Operations"]
+                api_auth["🔐 Authentication & RBAC"]
+                api_business["⚙️ Business Logic"]
+                api_rag["🧠 RAG Integration"]
+                api_bridge["🌉 MCP Bridge Communication"]
+            end
+            
+            %% MCP Bridge Server
+            subgraph "MCP Bridge Server (Python FastAPI)"
+                direction TB
+                bridge_port["🐍 Port 8000"]
+                bridge_llm["🤖 Multi-LLM Management<br/>(OpenAI, Gemini, Claude)"]
+                bridge_browser["🎭 Browser Automation<br/>(Playwright)"]
+                bridge_jira["🔗 Enterprise Integration<br/>(JIRA)"]
+                bridge_reverse["🔄 Reverse Engineering<br/>(Code/Design Analysis)"]
+                bridge_ops["⚡ AI-Powered Operations"]
+            end
+
+            %% MCP Servers Layer
+            subgraph "MCP Servers (Tool Layer)"
+                direction LR
+                mcp_playwright["🎭 Playwright MCP<br/>Port 8931<br/>Browser Automation"]
+                mcp_jira["🔗 JIRA MCP<br/>Remote Atlassian<br/>mcp-remote proxy"]
+            end
+        end
+
+        %% Database Layer
+        subgraph "Data Stores"
+            direction TB
+            subgraph "MariaDB (aura_playground)"
+                direction TB
+                db_sdlc["📋 SDLC Tables<br/>business_briefs → initiatives<br/>→ features → epics → stories"]
+                db_vector["🔍 Vector Storage<br/>vector_stores, document_chunks<br/>RAG embeddings"]
+                db_aurav2["🚀 AuraV2 Extensions<br/>workflow_stages, user_roles<br/>qualified_ideas"]
+                db_artifacts["📁 Artifacts<br/>designs, code_items, test_cases"]
+            end
+        end
+        
+    end
+
+    %% --- BOTTOM LAYER: EXTERNAL AI SERVICES ---
+    subgraph "External AI Services (LLM Providers)"
+        direction LR
+        openai["🧠 OpenAI API<br/>GPT-4o, GPT-4o-mini<br/>Embeddings"]
+        gemini["🔮 Google Gemini API<br/>2.5-Pro, 2.5-Flash<br/>Multimodal"]
+        anthropic["🎭 Anthropic Claude API<br/>Via LangChain"]
+    end
+
+    %% --- DEFINE CONNECTIONS ---
+    
+    %% User Interactions
+    user -- "HTTPS" --> aura_ui
+    enterprise_tools -- "Context Data" --> bridge_jira
+    
+    %% Frontend to Backend
+    aura_ui -- "REST API" --> api_crud
+    aura_ui -- "REST API" --> api_auth
+    aura_ui -- "REST API" --> api_business
+    aura_ui -- "REST API" --> api_rag
+    
+    %% Version Selection
+    aura_ui --> v1
+    aura_ui --> v2
+    
+    %% API Routes to Database
+    api_crud -- "MySQL Protocol<br/>Connection Pool" --> db_sdlc
+    api_business -- "Reads/Writes" --> db_aurav2
+    api_rag -- "Vector Queries" --> db_vector
+    
+    %% API Routes to MCP Bridge
+    api_bridge -- "HTTP POST<br/>localhost:8000" --> bridge_port
+    
+    %% MCP Bridge Internal Flow
+    bridge_port --> bridge_llm
+    bridge_port --> bridge_browser
+    bridge_port --> bridge_jira
+    bridge_port --> bridge_reverse
+    bridge_port --> bridge_ops
+    
+    %% MCP Bridge to External Services
+    bridge_llm -- "HTTPS<br/>Secure API Calls" --> openai
+    bridge_llm -- "HTTPS<br/>Secure API Calls" --> gemini  
+    bridge_llm -- "HTTPS<br/>Secure API Calls" --> anthropic
+    
+    %% MCP Bridge to MCP Servers
+    bridge_browser -- "WebSocket/SSE<br/>Commands" --> mcp_playwright
+    bridge_jira -- "WebSocket/SSE<br/>Commands" --> mcp_jira
+    
+    %% MCP Servers Validation
+    mcp_playwright -- "LLM Validation" --> bridge_llm
+    
+    %% Database Relationships
+    db_sdlc -.-> db_vector
+    db_sdlc -.-> db_aurav2
+    db_sdlc -.-> db_artifacts
+    
+    %% Apply Class Definitions
+    class aura_ui app;
+    class v1,v2 version;
+    class api_crud,api_auth,api_business,api_rag,api_bridge core;
+    class bridge_port,bridge_llm,bridge_browser,bridge_jira,bridge_reverse,bridge_ops bridge;
+    class user,enterprise_tools external;
+    class openai,gemini,anthropic llm;
+    class mcp_playwright,mcp_jira mcp;
+    class db_sdlc,db_vector,db_aurav2,db_artifacts database;
+
+
+

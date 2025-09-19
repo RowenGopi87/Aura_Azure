@@ -1,0 +1,190 @@
+graph TD
+    %% Define Styles
+    classDef azure fill:#0078d4,stroke:#005a9e,stroke-width:2px,color:#ffffff;
+    classDef azureAI fill:#ff6b35,stroke:#e55a2b,stroke-width:2px,color:#ffffff;
+    classDef azureData fill:#00bcf2,stroke:#0099cc,stroke-width:2px,color:#ffffff;
+    classDef azureCompute fill:#7fba00,stroke:#68a100,stroke-width:2px,color:#ffffff;
+    classDef external fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px;
+    classDef version fill:#fff8e1,stroke:#f57c00,stroke-width:1px,stroke-dasharray: 3 3;
+    classDef security fill:#ff4081,stroke:#e91e63,stroke-width:2px,color:#ffffff;
+    classDef resourceGroup fill:#e1f5fe,stroke:#0277bd,stroke-width:3px;
+
+    %% --- TOP LEVEL: USERS & EXTERNAL SYSTEMS ---
+    subgraph "Users & External Systems"
+        direction LR
+        user([👤 User])
+        enterprise_tools["🏢 Enterprise Tools<br/>(JIRA, Confluence, etc.)"]
+    end
+
+    %% --- AZURE CLOUD ENVIRONMENT ---
+    subgraph "Microsoft Azure Cloud - East US 2"
+        
+        %% Production Resource Group
+        subgraph "aura-prod-rg (Resource Group)"
+            
+            %% Security & Identity Layer
+            subgraph "🔐 Security & Identity"
+                direction LR
+                aura_entra_app["🔑 aura-entra-app<br/>Microsoft Entra ID App<br/>SSO + RBAC + OAuth"]
+                aura_keyvault["🗝️ aura-keyvault<br/>Azure Key Vault (Standard)<br/>API Keys & Secrets<br/>Soft Delete + Purge Protection"]
+            end
+        
+            %% Frontend Layer
+            subgraph "🌐 Frontend Hosting"
+                aura_frontend["📱 aura-frontend<br/>Azure Static Web Apps (Standard)<br/>Next.js 15.3.5 Frontend<br/>React 19 + TypeScript<br/>Global CDN + CI/CD"]
+                
+                %% Version Architecture
+                subgraph "Dual Version Architecture"
+                    direction LR
+                    v1["📊 Version 1<br/>Traditional SDLC"]
+                    v2["🚀 AuraV2<br/>AI-Enhanced + RBAC"]
+                end
+            end
+            
+            %% Networking Layer
+            subgraph "🌐 Virtual Network"
+                direction TB
+                aura_vnet["🔗 aura-vnet<br/>Virtual Network<br/>10.0.0.0/16"]
+                aura_subnet_backend["📡 aura-subnet-backend<br/>Backend Subnet<br/>10.0.1.0/24"]
+                aura_subnet_data["💾 aura-subnet-data<br/>Data Subnet<br/>10.0.2.0/24"]
+                aura_nsg_backend["🛡️ aura-nsg-backend<br/>Network Security Group<br/>HTTP/HTTPS Rules"]
+                aura_nsg_data["🛡️ aura-nsg-data<br/>Network Security Group<br/>MySQL Rules"]
+            end
+            
+            %% Application Layer
+            subgraph "⚙️ Application Services"
+                direction TB
+                
+                %% Backend API Service
+                aura_backend_plan["📋 aura-backend-plan<br/>App Service Plan (B2)<br/>Linux, 2 cores, 3.5GB RAM"]
+                aura_backend["🖥️ aura-backend<br/>Azure App Service (B2)<br/>Next.js API Routes<br/>Node.js 18 LTS + Managed Identity"]
+                
+                %% Container Services
+                auracr["📦 auracr<br/>Azure Container Registry (Basic)<br/>Docker Images<br/>Admin User Enabled"]
+                aura_mcp_bridge["🐍 aura-mcp-bridge<br/>Azure Container Instances<br/>MCP Bridge FastAPI Server<br/>1 vCPU, 1.5GB RAM, Python 3.11"]
+                
+                %% Integration Services
+                aura_jira_logic["🔄 aura-jira-logic<br/>Azure Logic Apps (Consumption)<br/>JIRA Integration<br/>Enterprise Workflows"]
+            end
+        
+            %% AI & Cognitive Services
+            subgraph "🤖 Azure AI Services"
+                direction TB
+                aura_openai["🧠 aura-openai<br/>Azure OpenAI Service (S0)<br/>GPT-4o (100K TPM)<br/>text-embedding-3-small (350K TPM)<br/>Content Filtering + VNet Access"]
+                aura_search["🔍 aura-search<br/>Azure AI Search (Basic)<br/>Vector Search + Hybrid Search<br/>1 Search Unit, 2GB Storage<br/>Semantic Search Enabled"]
+                aura_doc_intelligence["📄 aura-doc-intelligence<br/>Azure AI Document Intelligence (S0)<br/>PDF/Word Processing<br/>Form Recognition"]
+            end
+            
+            %% Data Layer
+            subgraph "💾 Data Services"
+                direction TB
+                aura_mariadb["🗄️ aura-mariadb<br/>Azure Database for MariaDB<br/>B_Gen5_1 (Burstable)<br/>2 vCores, 4GB RAM, 32GB Storage<br/>SSL Enforced + Auto-grow"]
+                aurastorage["📁 aurastorage<br/>Azure Storage Account<br/>Standard_LRS + Hot Tier<br/>Blob Versioning + Soft Delete<br/>documents/uploads/exports containers"]
+            end
+            
+            %% Monitoring & Analytics
+            subgraph "📊 Monitoring & Analytics"
+                direction TB
+                aura_insights["📈 aura-insights<br/>Application Insights<br/>Performance Monitoring<br/>90 Days Retention<br/>Error Tracking + Usage Analytics"]
+                aura_powerbi["📊 aura-powerbi<br/>Power BI Embedded (A1)<br/>Business Dashboards<br/>1GB Memory<br/>SDLC Metrics"]
+            end
+            
+            %% Testing & DevOps
+            subgraph "🔧 Testing & DevOps"
+                direction TB
+                aura_test_vm["🎭 aura-test-vm<br/>Azure Virtual Machine (B2s)<br/>Linux, 2 vCPUs, 4GB RAM<br/>Playwright Testing<br/>Browser Automation"]
+                aura_backup_vault["💾 aura-backup-vault<br/>Recovery Services Vault<br/>GRS (Geo-redundant)<br/>Database Backups"]
+            end
+            
+        end
+        
+        %% External DevOps (Outside Resource Group)
+        aura_devops["⚡ aura-devops<br/>Azure DevOps Organization<br/>CI/CD Pipelines + Source Control<br/>Release Management<br/>5 Users (Basic)"]
+        
+    end
+    
+    %% --- EXTERNAL AI SERVICES (FALLBACK) ---
+    subgraph "External AI Services (Fallback)"
+        direction LR
+        gemini["🔮 Google Gemini API<br/>Fallback Provider"]
+        anthropic["🎭 Anthropic Claude API<br/>Fallback Provider"]
+    end
+
+    %% --- DEFINE CONNECTIONS ---
+    
+    %% User Authentication Flow
+    user -- "HTTPS<br/>Authentication" --> aura_entra_app
+    aura_entra_app -- "JWT Tokens" --> aura_frontend
+    
+    %% Frontend to Backend
+    aura_frontend -- "REST API<br/>HTTPS" --> aura_backend
+    aura_frontend --> v1
+    aura_frontend --> v2
+    
+    %% Network Infrastructure
+    aura_vnet --> aura_subnet_backend
+    aura_vnet --> aura_subnet_data
+    aura_subnet_backend --> aura_nsg_backend
+    aura_subnet_data --> aura_nsg_data
+    
+    %% App Service Dependencies
+    aura_backend_plan --> aura_backend
+    auracr --> aura_mcp_bridge
+    
+    %% Backend to Services
+    aura_backend -- "Managed Identity<br/>MySQL Protocol" --> aura_mariadb
+    aura_backend -- "HTTP/HTTPS" --> aura_mcp_bridge
+    aura_backend -- "REST API" --> aura_search
+    aura_backend -- "Azure SDK" --> aura_openai
+    
+    %% MCP Bridge Operations
+    aura_mcp_bridge -- "Azure SDK" --> aura_openai
+    aura_mcp_bridge -- "REST API" --> aura_search
+    aura_mcp_bridge -- "SSH/HTTPS" --> aura_test_vm
+    aura_mcp_bridge -- "Webhook" --> aura_jira_logic
+    
+    %% AI Service Integrations
+    aura_openai -- "Embeddings" --> aura_search
+    aura_doc_intelligence -- "Processed Content" --> aura_search
+    aurastorage -- "Documents" --> aura_doc_intelligence
+    
+    %% External Integrations
+    aura_jira_logic -- "REST API" --> enterprise_tools
+    aura_test_vm -- "Browser Automation" --> aura_frontend
+    
+    %% Fallback AI Services
+    aura_mcp_bridge -. "Fallback<br/>HTTPS" .-> gemini
+    aura_mcp_bridge -. "Fallback<br/>HTTPS" .-> anthropic
+    
+    %% Security & Secrets
+    aura_keyvault -- "API Keys" --> aura_backend
+    aura_keyvault -- "Connection Strings" --> aura_mcp_bridge
+    aura_keyvault -- "Secrets" --> aura_jira_logic
+    
+    %% Monitoring
+    aura_backend --> aura_insights
+    aura_mcp_bridge --> aura_insights
+    aura_frontend --> aura_insights
+    aura_insights --> aura_powerbi
+    
+    %% DevOps Flow
+    aura_devops -- "Deploy" --> aura_frontend
+    aura_devops -- "Deploy" --> aura_backend
+    aura_devops -- "Deploy" --> aura_mcp_bridge
+    aura_devops -- "Trigger Tests" --> aura_test_vm
+    
+    %% Data Flow & Backup
+    aura_backend -- "Store/Retrieve" --> aurastorage
+    aura_mariadb -- "Backup" --> aura_backup_vault
+    
+    %% Apply Class Definitions
+    class aura_frontend,aura_backend,aura_backend_plan,aura_mcp_bridge,auracr,aura_test_vm azureCompute;
+    class aura_mariadb,aurastorage azureData;
+    class aura_openai,aura_search,aura_doc_intelligence azureAI;
+    class aura_devops,aura_jira_logic,aura_insights,aura_powerbi,aura_backup_vault azure;
+    class aura_entra_app,aura_keyvault security;
+    class aura_vnet,aura_subnet_backend,aura_subnet_data,aura_nsg_backend,aura_nsg_data azure;
+    class user,enterprise_tools external;
+    class v1,v2 version;
+    class gemini,anthropic external;
+
