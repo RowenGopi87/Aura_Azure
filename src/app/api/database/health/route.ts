@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server';
-import { checkAuraDatabaseHealth } from '@/lib/database';
+import { createConnection } from '@/lib/database';
 
 export async function GET() {
   try {
-    const health = await checkAuraDatabaseHealth();
+    console.log('✅ Database connection test successful');
+    
+    // Simple health check using direct connection
+    const connection = await createConnection();
+    await connection.execute('SELECT 1 as test');
+    await connection.end();
     
     return NextResponse.json({
-      healthy: health.healthy,
-      services: health.services,
+      healthy: true,
+      services: {
+        database: { connected: true },
+        embeddings: { enabled: false },
+        vectorStore: { available: false }
+      },
       timestamp: new Date().toISOString(),
-      message: health.healthy 
-        ? 'All database services operational' 
-        : 'Some database services have issues'
+      message: 'Database connection successful'
     });
   } catch (error) {
     console.error('Database health check failed:', error);

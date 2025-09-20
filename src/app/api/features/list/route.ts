@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { createConnection } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,15 +30,16 @@ export async function GET(request: NextRequest) {
 
     query += ' ORDER BY created_at DESC';
 
-    await db.initialize();
-    const features = await db.execute(query, params);
+    const connection = await createConnection();
+    const [features] = await connection.execute(query, params);
+    await connection.end();
 
-    console.log('✅ Retrieved features from database:', features.length);
+    console.log('✅ Retrieved features from database:', (features as any[]).length);
 
     return NextResponse.json({
       success: true,
       data: features,
-      count: features.length,
+      count: (features as any[]).length,
       message: 'Features retrieved successfully'
     });
 

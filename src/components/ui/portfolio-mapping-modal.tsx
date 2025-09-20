@@ -223,8 +223,8 @@ export function PortfolioMappingModal({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {groupInitiatives.map(initiative => (
-                  <div key={initiative.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                {groupInitiatives.map((initiative, index) => (
+                  <div key={`${initiative.id}-${index}-${Date.now()}`} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <Target className="w-3 h-3 text-yellow-600" />

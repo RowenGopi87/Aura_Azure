@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { RouteGuard } from '@/components/rbac/route-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -122,7 +123,7 @@ interface ReverseEngineeredWorkItems {
 type ViewportType = 'desktop' | 'tablet' | 'mobile';
 type CodeType = 'frontend' | 'backend' | 'fullstack';
 
-export default function CodePage() {
+function CodePageComponent() {
   // Store hooks
   const { addInitiative, initiatives } = useInitiativeStore();
   const { addFeature, features } = useFeatureStore();
@@ -3358,4 +3359,13 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
       )}
     </div>
   );
-} 
+}
+
+// Protected export with RBAC
+export default function CodePage() {
+  return (
+    <RouteGuard requiredModule="code" requiredPermission="read" fallbackPath="/v1">
+      <CodePageComponent />
+    </RouteGuard>
+  );
+}

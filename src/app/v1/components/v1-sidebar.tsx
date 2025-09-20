@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
+import { useRBAC } from '@/hooks/use-rbac';
 import { ResizeHandle } from '@/components/ui/resize-handle';
 import { MODULES, WORKFLOW_STEPS, APP_NAME } from '@/lib/config';
 import { Button } from '@/components/ui/button';
@@ -27,20 +28,20 @@ import {
   Clock,
   AlertCircle,
   Palette,
-  Code2
+  Code2,
+  Shield,
+  Users
 } from 'lucide-react';
 
-// Version 1 specific modules (legacy SDLC modules) - dashboard moved to bottom
+// Version 1 core modules (streamlined for current focus)
 const V1_MODULES = [
-  { id: "use-cases", name: "Idea", path: "/v1/use-cases", icon: FileText },
-  { id: "requirements", name: "Work Items", path: "/v1/requirements", icon: Settings },
-  { id: "design", name: "Design", path: "/v1/design", icon: Palette },
-  { id: "code", name: "Code", path: "/v1/code", icon: Code2 },
-  { id: "test-cases", name: "Test Cases", path: "/v1/test-cases", icon: TestTube },
-  { id: "execution", name: "Execution", path: "/v1/execution", icon: Play },
-  { id: "defects", name: "Defects", path: "/v1/defects", icon: Bug },
-  { id: "traceability", name: "Traceability", path: "/v1/traceability", icon: GitBranch },
-  { id: "dashboard", name: "Dashboard", path: "/v1/dashboard", icon: BarChart3 },
+  { id: "use-cases", name: "Ideas", path: "/v1/use-cases", icon: FileText, moduleName: "ideas" },
+  { id: "requirements", name: "Work Items", path: "/v1/requirements", icon: Settings, moduleName: "work_items" },
+  { id: "design", name: "Design", path: "/v1/design", icon: Palette, moduleName: "design" },
+  { id: "code", name: "Code", path: "/v1/code", icon: Code2, moduleName: "code" },
+  { id: "test-cases", name: "Test Cases", path: "/v1/test-cases", icon: TestTube, moduleName: "test_cases" },
+  { id: "execution", name: "Execution", path: "/v1/execution", icon: Play, moduleName: "execution" },
+  // Defects, Traceability, and Dashboard modules removed for now
 ];
 
 export function Version1Sidebar() {
@@ -55,6 +56,14 @@ export function Version1Sidebar() {
     getSidebarWidth,
     setSidebarWidth 
   } = useAppStore();
+  
+  const { 
+    hasModuleAccess, 
+    isLoading, 
+    primaryRole, 
+    isAuthenticated,
+    logAccessAttempt 
+  } = useRBAC();
 
   const workflowProgress = getWorkflowProgress();
 
@@ -105,8 +114,7 @@ export function Version1Sidebar() {
                 <span className="text-white font-bold text-sm">A</span>
               </div>
               <div>
-                <div className="font-semibold text-gray-900">{APP_NAME} v1</div>
-                <div className="text-xs text-gray-500">Traditional SDLC</div>
+                <div className="font-semibold text-gray-900">AURA</div>
               </div>
             </div>
           )}
@@ -125,18 +133,11 @@ export function Version1Sidebar() {
           </Button>
         </div>
 
-        {/* Progress Section */}
-        {!sidebarCollapsed && (
-          <div className="p-4 border-b border-gray-200 flex-shrink-0">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>Workflow Progress</span>
-                <span>{workflowProgress}%</span>
-              </div>
-              <Progress value={workflowProgress} className="h-2" />
-              <div className="text-xs text-gray-500">
-                Step {currentWorkflowStep} of {WORKFLOW_STEPS.length}
-              </div>
+        {/* Simple Role Indicator */}
+        {!sidebarCollapsed && isAuthenticated && (
+          <div className="px-4 py-2 border-b border-gray-200 bg-slate-50 flex-shrink-0">
+            <div className="text-xs text-slate-600 text-center">
+              {primaryRole}
             </div>
           </div>
         )}
@@ -145,29 +146,113 @@ export function Version1Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-          <div className="space-y-1">
-            {V1_MODULES.map((module) => {
-              const Icon = module.icon;
-              const isActive = pathname === module.path;
+          {!isAuthenticated ? (
+            <div className="flex items-center justify-center p-4">
+              <div className="text-sm text-gray-500">Please log in to access modules</div>
+            </div>
+          ) : isLoading ? (
+            <div className="flex items-center justify-center p-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent" />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1">
+                {V1_MODULES.map((module) => {
+                  const Icon = module.icon;
+                  const isActive = pathname === module.path;
+                  const hasAccess = hasModuleAccess(module.moduleName);
+                  
+                  // Don't render modules user doesn't have access to
+                  if (!hasAccess) {
+                    return null;
+                  }
+                  
+                  return (
+                    <Link 
+                      key={module.id} 
+                      href={module.path}
+                      onClick={() => logAccessAttempt(module.moduleName, 'navigate', true)}
+                    >
+                      <Button
+                        variant={isActive ? "default" : "ghost"}
+                        className={cn(
+                          "w-full justify-start h-10 px-3",
+                          sidebarCollapsed && "justify-center px-2",
+                          isActive && "bg-blue-600 text-white hover:bg-blue-700",
+                          !isActive && "text-gray-600 hover:text-gray-900"
+                        )}
+                      >
+                        <Icon size={18} />
+                        {!sidebarCollapsed && <span className="ml-3 font-medium">{module.name}</span>}
+                      </Button>
+                    </Link>
+                  );
+                })}
+              </div>
               
-              return (
-                <Link key={module.id} href={module.path}>
-                  <Button
-                    variant={isActive ? "default" : "ghost"}
-                    className={cn(
-                      "w-full justify-start h-10 px-3",
-                      sidebarCollapsed && "justify-center px-2",
-                      isActive && "bg-blue-600 text-white hover:bg-blue-700",
-                      !isActive && "text-gray-600 hover:text-gray-900"
-                    )}
-                  >
-                    <Icon size={18} />
-                    {!sidebarCollapsed && <span className="ml-3 font-medium">{module.name}</span>}
-                  </Button>
-                </Link>
-              );
-            })}
-          </div>
+              {/* Admin Section for admin users */}
+              {isAuthenticated && (
+                <>
+                  {V1_MODULES.some(module => hasModuleAccess(module.moduleName)) && (
+                    <div className="px-3 py-2">
+                      <div className="h-px bg-gray-200 mb-3" />
+                    </div>
+                  )}
+                  
+                  {/* Admin Links */}
+                  {primaryRole.includes('Administrator') && (
+                    <div className="space-y-1">
+                      <Link 
+                        href="/admin/audit"
+                        onClick={() => logAccessAttempt('admin', 'navigate', true)}
+                      >
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start h-10 px-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50",
+                            sidebarCollapsed && "justify-center px-2",
+                            pathname === '/admin/audit' && "bg-purple-50 text-purple-700"
+                          )}
+                        >
+                          <Shield size={18} />
+                          {!sidebarCollapsed && <span className="ml-3 font-medium">Audit Dashboard</span>}
+                        </Button>
+                      </Link>
+                      
+                      <Link 
+                        href="/admin/users"
+                        onClick={() => logAccessAttempt('admin', 'navigate', true)}
+                      >
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start h-10 px-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50",
+                            sidebarCollapsed && "justify-center px-2",
+                            pathname === '/admin/users' && "bg-purple-50 text-purple-700"
+                          )}
+                        >
+                          <Users size={18} />
+                          {!sidebarCollapsed && <span className="ml-3 font-medium">Manage Users</span>}
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Show message if no modules are accessible */}
+              {V1_MODULES.every(module => !hasModuleAccess(module.moduleName)) && (
+                <div className="px-3 py-4 text-center">
+                  <div className="text-sm text-gray-500">
+                    No modules available for your role
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Contact administrator for access
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </nav>
 
 

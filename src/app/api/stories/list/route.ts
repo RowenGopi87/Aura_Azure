@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { createConnection } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,15 +30,16 @@ export async function GET(request: NextRequest) {
 
     query += ' ORDER BY created_at DESC';
 
-    await db.initialize();
-    const stories = await db.execute(query, params);
+    const connection = await createConnection();
+    const [stories] = await connection.execute(query, params);
+    await connection.end();
 
-    console.log('✅ Retrieved stories from database:', stories.length);
+    console.log('✅ Retrieved stories from database:', (stories as any[]).length);
 
     return NextResponse.json({
       success: true,
       data: stories,
-      count: stories.length,
+      count: (stories as any[]).length,
       message: 'Stories retrieved successfully'
     });
 

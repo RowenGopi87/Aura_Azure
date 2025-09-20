@@ -99,7 +99,9 @@ import {
 
 
 
-export default function TestCasesPage() {
+import { RouteGuard } from '@/components/rbac/route-guard';
+
+function TestCasesPageComponent() {
   const { initiatives } = useInitiativeStore();
   const { features, getFeaturesByInitiative } = useFeatureStore();
   const { epics, getEpicsByFeature } = useEpicStore();
@@ -2247,4 +2249,13 @@ Generate comprehensive test cases that thoroughly validate the ${currentLevel} w
        </div>
     </div>
   );
-} 
+}
+
+// Protected export with RBAC
+export default function TestCasesPage() {
+  return (
+    <RouteGuard requiredModule="test_cases" requiredPermission="read" fallbackPath="/v1">
+      <TestCasesPageComponent />
+    </RouteGuard>
+  );
+}
