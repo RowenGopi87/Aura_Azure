@@ -5,20 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useRBAC } from "@/hooks/use-rbac";
 import { 
-  FileText, 
-  Settings, 
-  TestTube, 
+  Lightbulb, 
+  Target, 
+  Box, 
+  Code,
+  Route,
   Play, 
   ArrowRight,
   CheckCircle,
-  Palette,
-  Code2,
   Sparkles,
   Users,
   Clock,
-  Target,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Wand2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -29,7 +29,7 @@ export default function Version1HomePage() {
   const workflowSteps = [
     {
       step: 1,
-      icon: FileText,
+      icon: Lightbulb,
       title: "Ideas",
       description: "Start with a business idea or use case",
       path: "/v1/use-cases",
@@ -39,7 +39,7 @@ export default function Version1HomePage() {
     },
     {
       step: 2,
-      icon: Settings,
+      icon: Target,
       title: "Work Items",
       description: "Break down ideas into actionable work items",
       path: "/v1/requirements",
@@ -48,7 +48,7 @@ export default function Version1HomePage() {
     },
     {
       step: 3,
-      icon: Palette,
+      icon: Box,
       title: "Design",
       description: "Create system designs and architecture",
       path: "/v1/design",
@@ -57,7 +57,7 @@ export default function Version1HomePage() {
     },
     {
       step: 4,
-      icon: Code2,
+      icon: Code,
       title: "Code",
       description: "Generate and implement code solutions",
       path: "/v1/code",
@@ -66,7 +66,7 @@ export default function Version1HomePage() {
     },
     {
       step: 5,
-      icon: TestTube,
+      icon: Route,
       title: "Test Cases",
       description: "Create comprehensive test scenarios",
       path: "/v1/test-cases",
@@ -99,26 +99,26 @@ export default function Version1HomePage() {
   const nextStep = accessibleSteps.find(step => step.isStartPoint) || accessibleSteps[0];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 py-4">
       {/* Welcome Header */}
-      <div className="text-center space-y-6">
-        <div className="inline-flex items-center space-x-3 bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 text-slate-700 px-6 py-3 rounded-full text-base font-semibold shadow-sm">
-          <Sparkles size={18} className="text-blue-600" />
-          <span>Welcome to AURA Development Platform</span>
+      <div className="text-center space-y-4">
+        <div className="inline-flex items-center space-x-3 emirates-glass-modal px-6 py-3 rounded-full text-base font-semibold shadow-lg">
+          <Sparkles size={18} className="text-purple-600" />
+          <span className="emirates-text-primary">Welcome to AURA AI Platform</span>
         </div>
         
         <div className="space-y-3">
-          <h1 className="text-4xl font-bold text-slate-900">
+          <h1 className="text-3xl font-bold emirates-text-primary">
             Hello, <span className="text-blue-600">{primaryRole}</span>
           </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Follow the guided workflow to transform your ideas into reality
+          <p className="text-lg emirates-text-muted max-w-2xl mx-auto">
+            AI-powered workflow to transform your ideas into reality
           </p>
         </div>
 
         {/* Quick Start */}
         {nextStep && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 max-w-lg mx-auto">
+          <div className="emirates-glass-card p-6 max-w-lg mx-auto">
             <div className="flex items-center space-x-3 mb-4">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Target className="h-5 w-5 text-blue-600" />
@@ -132,7 +132,7 @@ export default function Version1HomePage() {
             <Link href={nextStep.path}>
               <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                 <nextStep.icon size={20} className="mr-3" />
-                <span>Start with {nextStep.title}</span>
+                <span>Start with AI {nextStep.title}</span>
                 <ArrowRight size={16} className="ml-3" />
               </Button>
             </Link>
@@ -143,15 +143,15 @@ export default function Version1HomePage() {
       {/* Workflow Steps */}
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Your Development Workflow</h2>
-          <p className="text-slate-600">Follow these steps to bring your ideas to life</p>
+          <h2 className="text-2xl font-bold emirates-text-primary mb-2">Your AI Development Workflow</h2>
+          <p className="emirates-text-muted">Six intelligent steps to bring your ideas to life</p>
         </div>
 
         <div className="relative">
           {/* Workflow Connection Line */}
           <div className="absolute top-12 left-1/2 transform -translate-x-1/2 w-full max-w-4xl h-0.5 bg-gradient-to-r from-blue-200 via-purple-200 via-green-200 via-orange-200 via-teal-200 to-indigo-200 opacity-50 hidden lg:block" />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto relative z-10">
             {accessibleSteps.map((step, index) => {
               const Icon = step.icon;
               const isAccessible = hasModuleAccess(step.moduleName);
@@ -168,10 +168,10 @@ export default function Version1HomePage() {
               
               return (
                 <Link key={step.step} href={isAccessible ? step.path : '#'}>
-                  <Card className={`group hover:shadow-xl transition-all duration-300 cursor-pointer border-2 relative overflow-hidden ${
+                  <Card className={`emirates-glass-card group hover:shadow-xl transition-all duration-300 cursor-pointer relative overflow-hidden ${
                     isAccessible 
-                      ? `hover:scale-[1.02] ${bgColor} ${borderColor} hover:shadow-${step.color}-200/50` 
-                      : 'border-gray-200 opacity-50 cursor-not-allowed bg-gray-50'
+                      ? `hover:scale-[1.02] hover:shadow-2xl` 
+                      : 'opacity-50 cursor-not-allowed'
                   }`}>
                     {/* Step connector */}
                     {index < accessibleSteps.length - 1 && (
@@ -180,47 +180,30 @@ export default function Version1HomePage() {
                       </div>
                     )}
                     
-                    <CardHeader className="text-center pb-4 relative">
-                      <div className="relative">
-                        <div className={`mx-auto w-16 h-16 rounded-xl flex items-center justify-center mb-4 shadow-lg ${
-                          isAccessible 
-                            ? `bg-gradient-to-br ${gradientFrom} ${gradientTo}`
-                            : 'bg-gray-100'
-                        }`}>
-                          <Icon className={`w-8 h-8 ${isAccessible ? 'text-white' : 'text-gray-400'}`} />
-                        </div>
-                        
-                        <div className={`absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ${
-                          isAccessible 
-                            ? `bg-gradient-to-br ${gradientFrom} ${gradientTo}`
-                            : 'bg-gray-400'
-                        }`}>
-                          {step.step}
-                        </div>
+                    <CardContent className="p-4 text-center relative h-32">
+                      {/* Step Number */}
+                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 border border-white/30 flex items-center justify-center">
+                        <span className="text-xs font-bold emirates-text-primary">{step.step}</span>
                       </div>
                       
-                      <CardTitle className={`text-xl font-bold mb-2 ${isAccessible ? 'text-slate-900' : 'text-gray-400'}`}>
+                      {/* Icon */}
+                      <div className={`mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-3 shadow-lg ${
+                        isAccessible 
+                          ? `bg-gradient-to-br ${gradientFrom} ${gradientTo}`
+                          : 'bg-gray-100'
+                      }`}>
+                        <Icon className={`w-6 h-6 ${isAccessible ? 'text-white' : 'text-gray-400'}`} />
+                      </div>
+                      
+                      {/* Title */}
+                      <h3 className={`text-lg font-bold ${isAccessible ? 'emirates-text-primary' : 'text-gray-400'}`}>
                         {step.title}
-                      </CardTitle>
-                      <CardDescription className={`text-sm leading-relaxed ${isAccessible ? 'text-slate-600' : 'text-gray-400'}`}>
-                        {step.description}
-                      </CardDescription>
+                      </h3>
                       
-                      <div className="mt-3 space-y-2">
-                        {step.isStartPoint && isAccessible && (
-                          <Badge className="bg-green-100 text-green-700 border-green-200">
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            Start Here
-                          </Badge>
-                        )}
-                        
-                        {!isAccessible && (
-                          <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
-                            No Access
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
+                      {step.isStartPoint && isAccessible && (
+                        <div className="absolute -top-1 -left-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
+                      )}
+                    </CardContent>
                   </Card>
                 </Link>
               );

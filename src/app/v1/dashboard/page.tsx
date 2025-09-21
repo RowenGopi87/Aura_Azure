@@ -64,7 +64,7 @@ export default function Version1DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Navigation Bar */}
       <div className="flex items-center justify-between pb-4 border-b border-gray-200">
         <div className="flex items-center space-x-4">
@@ -88,41 +88,51 @@ export default function Version1DashboardPage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Version 1 Dashboard</h1>
-          <p className="text-gray-600 mt-1">Overview of your SDLC workflow progress</p>
-        </div>
-        <Button className="flex items-center space-x-2">
-          <Download size={16} />
-          <span>Export Report</span>
-        </Button>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                <stat.icon size={16} className={stat.color} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-gray-600 mt-1">{stat.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Glass Effect Container */}
+      <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg shadow-xl p-6 space-y-6">
         
-        {/* Test Coverage Details */}
-        <Card>
+        {/* Header with Buttons */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Version 1 Dashboard</h1>
+            <p className="text-gray-600 mt-1">Overview of your SDLC workflow progress</p>
+          </div>
+          <Button className="bg-black text-white hover:bg-gray-800 flex items-center space-x-2">
+            <Download size={16} />
+            <span>Export Report</span>
+          </Button>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="bg-gray-200/60 backdrop-blur-sm border border-gray-300/40 rounded-lg p-4">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">Dashboard Summary</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <div key={index} className="p-4 bg-gray-50/80 rounded-lg border border-gray-200/50 hover:shadow-lg transition-shadow">
+                <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <h4 className="text-sm font-medium">{stat.title}</h4>
+                  <div className={`p-2 rounded-full ${stat.bgColor}`}>
+                    <stat.icon size={16} className={stat.color} />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-gray-600 mt-1">{stat.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Test Coverage Details */}
+          <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+            <div className="p-3 border-b border-gray-200/50">
+              <h3 className="text-base font-semibold text-gray-900">Test Coverage Details</h3>
+            </div>
+            <Card className="border-0 rounded-none">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TestTube size={18} />
@@ -164,8 +174,12 @@ export default function Version1DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Use Case Status */}
-        <Card>
+          {/* Use Case Status */}
+          <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+            <div className="p-3 border-b border-gray-200/50">
+              <h3 className="text-base font-semibold text-gray-900">Use Case Status</h3>
+            </div>
+            <Card className="border-0 rounded-none">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <FileText size={18} />
@@ -327,6 +341,8 @@ export default function Version1DashboardPage() {
           </div>
         </CardContent>
       </Card>
+      
+      </div>
     </div>
   );
 }

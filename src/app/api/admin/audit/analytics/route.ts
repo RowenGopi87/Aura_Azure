@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     const [promptAnalyticsResults] = await connection.execute(`
       SELECT 
         pa.keywords,
-        pa.usage_count as usage,
+        pa.usage_count as usageCount,
         pa.success_rate as successRate
       FROM prompt_analytics pa
       WHERE pa.created_at >= '${startDate.toISOString().slice(0, 19).replace('T', ' ')}'
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
         
         return keywords.map((keyword: string) => ({
           keyword,
-          usage: row.usage,
+          usage: row.usageCount,
           successRate: row.successRate || 0.5
         }));
       }).flat().slice(0, 10)

@@ -1516,9 +1516,9 @@ ${generatedCode.html}`;
       <React.Fragment key={uniqueKey}>
         {/* Main row */}
         <div
-          className={`group flex items-center px-2 py-2 hover:bg-gray-50 border-b border-gray-100 cursor-pointer ${
-            level > 0 ? 'bg-gray-25' : ''
-          } ${isSelected ? 'bg-blue-50 border-blue-200' : ''}`}
+          className={`group flex items-center px-2 py-2 bg-gray-200/30 hover:bg-gray-200/50 border-b border-gray-300/30 cursor-pointer ${
+            isSelected ? 'bg-blue-100/50 border-l-4 border-l-blue-500' : ''
+          }`}
           style={{ marginLeft: `${level * 24}px` }}
           onClick={() => {
             if (hasChildren) {
@@ -1635,19 +1635,24 @@ ${generatedCode.html}`;
   };
 
   return (
-    <div className={`container mx-auto p-6 space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white overflow-auto' : ''}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Design Repository</h1>
-          <p className="text-gray-600 text-sm">Generate and analyze UI/UX designs with AI-powered tools</p>
-        </div>
+    <div className={`container mx-auto p-6 space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-white overflow-auto' : ''}`}>
+      
+      {/* Glass Effect Container */}
+      <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg shadow-xl p-6 space-y-6">
+        
+        {/* Header with Badge */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Design Repository</h1>
+            <p className="text-gray-600 mt-1">Generate and analyze UI/UX designs with AI-powered tools</p>
+          </div>
           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
             <Palette className="w-4 h-4 mr-1" />
             Design Phase
           </Badge>
-      </div>
+        </div>
 
-      {/* Main Tab Navigation - Moved higher */}
+        {/* Main Tab Navigation - Moved higher */}
       <Tabs defaultValue="design-generation" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="design-generation" className="flex items-center">
@@ -1720,10 +1725,15 @@ ${generatedCode.html}`;
 
                         
                   {/* Hierarchical Table - Exact V1 Requirements Style */}
-                  <Card>
-                    <CardContent className="p-0">
+                  <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+                    <div className="p-3 border-b border-gray-200/50">
+                      <h3 className="text-base font-semibold text-gray-900">Work Items Hierarchy</h3>
+                      <p className="text-xs text-gray-600">Select a work item to create a design</p>
+                    </div>
+                    <Card className="border-0 rounded-none">
+                      <CardContent className="p-0">
                       {/* Table Header */}
-                      <div className="flex items-center px-2 py-2 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700 sticky top-0 z-10">
+                      <div className="flex items-center px-2 py-2 bg-gray-200/40 border-b border-gray-300/40 text-sm font-medium text-gray-700 sticky top-0 z-10">
                         <div className="w-6"></div> {/* Expand column */}
                         <div className="flex-1 min-w-0">Work Item</div>
                         <div className="w-20 text-center">Priority</div>
@@ -1737,7 +1747,7 @@ ${generatedCode.html}`;
                         <React.Fragment key={portfolioId}>
                           {/* Portfolio Header */}
                           <div 
-                            className="flex items-center gap-3 px-3 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 cursor-pointer"
+                            className="flex items-center gap-3 px-3 py-3 bg-gray-200/40 border-b border-gray-300/40 cursor-pointer"
                             onClick={() => toggleExpanded(`portfolio-${portfolioId}`)}
                           >
                             <button>
@@ -1767,7 +1777,7 @@ ${generatedCode.html}`;
                               <React.Fragment key={businessBriefId}>
                                 {/* Business Brief Header */}
                                 <div 
-                                  className="flex items-center gap-3 px-6 py-2 bg-amber-50 border-b border-gray-100 cursor-pointer"
+                                  className="flex items-center gap-3 px-6 py-2 bg-gray-200/35 border-b border-gray-300/35 cursor-pointer"
                                   onClick={() => toggleExpanded(`brief-${businessBriefId}`)}
                                 >
                                   <button>
@@ -1798,8 +1808,9 @@ ${generatedCode.html}`;
                                                 </React.Fragment>
                       ))}
                       </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                                       </div>
               )}
 
@@ -1936,7 +1947,7 @@ ${generatedCode.html}`;
                             generateCodeFromDesign();
                           }}
                           disabled={isGenerating || !selectedWorkItemForDesign}
-                          className="w-full"
+                          className="w-full bg-black text-white hover:bg-gray-800"
                           size="lg"
                         >
                           {isGenerating ? (
@@ -2796,7 +2807,7 @@ ${generatedCode.html}`;
                         (reverseConfig.inputType === 'image' && !reverseConfig.designImage) ||
                         (reverseConfig.inputType === 'upload' && reverseConfig.designFiles.length === 0)
                       )}
-                      className="w-full"
+                      className="w-full bg-black text-white hover:bg-gray-800"
                       size="lg"
                     >
                       {isReverseEngineering ? (
@@ -3151,6 +3162,8 @@ ${generatedCode.html}`;
           </div>
         </DialogContent>
       </Dialog>
+      
+      </div>
     </div>
   );
 } 

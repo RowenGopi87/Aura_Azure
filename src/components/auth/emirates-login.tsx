@@ -149,7 +149,7 @@ export function EmiratesLogin({ onLogin }: EmiratesLoginProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#C4D4D6' }}>
       {/* Subtle geometric background pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-0 left-0 w-full h-full bg-repeat" 
@@ -161,7 +161,7 @@ export function EmiratesLogin({ onLogin }: EmiratesLoginProps) {
       <div className="w-full max-w-md relative z-10">
         {/* Emirates Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center space-x-3 bg-white/95 backdrop-blur-sm px-6 py-4 rounded-2xl shadow-lg mb-6 border border-slate-200">
+          <div className="inline-flex items-center space-x-3 bg-white/20 backdrop-blur-md border border-white/30 px-6 py-4 rounded-2xl shadow-xl mb-6">
             <div className="p-2 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg">
               <Plane size={24} className="text-white" />
             </div>
@@ -176,7 +176,7 @@ export function EmiratesLogin({ onLogin }: EmiratesLoginProps) {
         </div>
 
         {/* Login Card */}
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <Card className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg shadow-xl">
           <CardHeader className="space-y-1 pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-semibold text-slate-800">Welcome back</CardTitle>
@@ -214,7 +214,7 @@ export function EmiratesLogin({ onLogin }: EmiratesLoginProps) {
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-slate-700 hover:bg-slate-800 text-white font-semibold text-base shadow-lg"
+                className="w-full h-12 bg-black hover:bg-gray-800 text-white font-semibold text-base shadow-lg"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -235,8 +235,9 @@ export function EmiratesLogin({ onLogin }: EmiratesLoginProps) {
             {/* Quick Login for Demo */}
             <div className="pt-4 border-t border-gray-200">
               <p className="text-xs text-gray-500 mb-3 text-center">Demo Users - Quick Login:</p>
-              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                {MOCK_USERS.map((user) => (
+              <div className="bg-gray-200/80 backdrop-blur-sm border border-gray-300/60 rounded-lg p-3">
+                <div className="grid grid-cols-2 gap-2">
+                {MOCK_USERS.filter(user => !user.roles.includes('system_administrator')).slice(0, 2).map((user) => (
                   <Button
                     key={user.id}
                     variant="outline"
@@ -250,6 +251,7 @@ export function EmiratesLogin({ onLogin }: EmiratesLoginProps) {
                     <div className="text-gray-400 text-[9px]">{user.organizationalLevel}</div>
                   </Button>
                 ))}
+                </div>
               </div>
             </div>
           </CardContent>

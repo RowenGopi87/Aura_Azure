@@ -507,23 +507,24 @@ export function Sidebar() {
   return (
     <>
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r-2 border-gray-300 shadow-sm transition-all duration-300 ease-in-out overflow-y-auto",
+        "fixed inset-y-0 left-0 z-30 flex flex-col bg-white/10 backdrop-blur-sm border-r border-white/30 transition-all duration-300 ease-in-out overflow-y-auto",
         "md:block",
-        sidebarCollapsed && "w-20", // Increased from w-16 to w-20 for better icon spacing
+        sidebarCollapsed && "w-20",
         !sidebarOpen && "md:block hidden"
       )}
       style={{
-        width: sidebarOpen ? `${getSidebarWidth()}px` : '0px'
+        width: sidebarOpen ? `${getSidebarWidth()}px` : '0px',
+        marginLeft: '89px' // Space for Emirates pill navigation
       }}>
         {/* Header */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-white/20 flex-shrink-0">
         {!sidebarCollapsed && (
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
             </div>
             <div>
-              <div className="font-semibold text-gray-900">{APP_NAME}</div>
+              <div className="font-semibold emirates-text-primary">{APP_NAME}</div>
               {isRoleSelected && (
                 <div className="text-xs text-gray-500">
                   Role: {useRoleStore.getState().getCurrentRole()?.name || 'None'}
@@ -710,7 +711,7 @@ export function Sidebar() {
       {/* Resize Handle */}
       {sidebarOpen && !sidebarCollapsed && (
         <div className="fixed top-0 bottom-0 z-50 flex items-center" 
-             style={{ left: `${getSidebarWidth()}px` }}>
+             style={{ left: `${getSidebarWidth() + 89}px` }}>
           <ResizeHandle
             direction="horizontal"
             onResize={handleResize}

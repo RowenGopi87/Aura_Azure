@@ -144,11 +144,11 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
   };
 
   return (
-    <div className={`h-full flex flex-col bg-white ${className}`}>
+    <div className={`h-full flex flex-col ${className}`} style={{ backgroundColor: '#C4D4D6' }}>
       {/* Messages Area */}
       <div 
         id="chat-messages-area"
-        className="flex-1 p-4 bg-gradient-to-br from-gray-50 to-blue-50 chat-scroll" 
+        className="flex-1 p-4 chat-scroll" 
         style={{ 
           scrollBehavior: 'smooth',
           overflowY: 'auto',
@@ -168,8 +168,8 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
               <div
                 className={`max-w-[85%] ${
                   message.role === 'user'
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl rounded-br-md shadow-lg'
-                    : 'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm border border-gray-100'
+                    ? 'bg-black text-white rounded-2xl rounded-br-md shadow-lg'
+                    : 'bg-gray-200/60 backdrop-blur-sm text-gray-900 rounded-2xl rounded-bl-md shadow-sm border border-gray-300/40'
                 } p-4 transition-all duration-200 hover:shadow-md`}
               >
                 {/* Message Content */}
@@ -183,16 +183,16 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
                 {/* Timestamp & Confidence */}
                 <div className={`flex items-center justify-between mt-2 pt-2 border-t ${
                   message.role === 'user' 
-                    ? 'border-blue-500 border-opacity-30' 
-                    : 'border-gray-200'
+                    ? 'border-gray-500 border-opacity-30' 
+                    : 'border-gray-300/40'
                 }`}>
                   <span className={`text-xs ${
-                    message.role === 'user' ? 'text-blue-200' : 'text-gray-500'
+                    message.role === 'user' ? 'text-gray-200' : 'text-gray-500'
                   }`}>
                     {formatTimestamp(message.timestamp)}
                   </span>
                   {message.confidence && message.role === 'assistant' && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                    <span className="text-xs bg-gray-200/80 text-gray-700 px-2 py-1 rounded-full font-medium">
                       {Math.round(message.confidence * 100)}% confidence
                     </span>
                   )}
@@ -219,12 +219,12 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
           {/* Loading Indicator */}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white text-gray-900 rounded-2xl rounded-bl-md p-4 max-w-[85%] shadow-sm border border-gray-100">
+              <div className="bg-gray-200/60 backdrop-blur-sm text-gray-900 rounded-2xl rounded-bl-md p-4 max-w-[85%] shadow-sm border border-gray-300/40">
                 <div className="flex items-center space-x-3">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-black rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                   </div>
                   <span className="text-sm text-gray-600 font-medium">Aura is thinking...</span>
                 </div>
@@ -238,7 +238,7 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
 
       {/* Input Area */}
       <div 
-        className="flex-shrink-0 p-3 border-t border-gray-100 bg-white"
+        className="flex-shrink-0 p-3 border-t border-gray-200/50"
       >
         <form onSubmit={handleSubmit} className="space-y-2">
           <div className="flex space-x-2">
@@ -249,7 +249,7 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask about work items, project status, or anything else..."
-                className="w-full border-2 border-gray-300 focus:border-blue-500 rounded-xl px-3 py-2 resize-none focus:outline-none transition-all duration-200 text-sm leading-relaxed shadow-sm"
+                className="w-full border border-gray-300/40 focus:border-black bg-gray-200/40 backdrop-blur-sm rounded-xl px-3 py-2 resize-none focus:outline-none transition-all duration-200 text-sm leading-relaxed shadow-sm"
                 style={{ overflow: 'hidden', minHeight: '40px', maxHeight: '40px' }}
                 rows={1}
                 disabled={isLoading}
@@ -259,7 +259,7 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
               <button
                 type="submit"
                 disabled={isLoading || !inputMessage.trim()}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 text-white p-2 rounded-xl transition-all duration-200 hover:scale-105 disabled:scale-100 shadow-md hover:shadow-lg"
+                className="bg-black hover:bg-gray-800 disabled:bg-gray-300 text-white p-2 rounded-xl transition-all duration-200 hover:scale-105 disabled:scale-100 shadow-md hover:shadow-lg"
                 aria-label="Send message"
               >
                 <Send size={16} />
@@ -267,7 +267,7 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
               <button
                 type="button"
                 onClick={() => {/* TODO: File upload */}}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-xl transition-all duration-200 hover:scale-105"
+                className="bg-gray-200/60 hover:bg-gray-300/60 text-gray-700 p-2 rounded-xl transition-all duration-200 hover:scale-105"
                 aria-label="Upload document"
                 title="Upload documents for enhanced context"
               >

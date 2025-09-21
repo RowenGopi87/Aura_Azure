@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databaseService } from '@/lib/database';
 import { z } from 'zod';
 
 const assignPortfolioSchema = z.object({
@@ -16,10 +15,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📥 Request body:', body);
 
+    // Dynamic import of database service
+    console.log('🔄 Loading database service...');
+    const { databaseService } = await import('@/lib/database/service');
+    
+    if (!databaseService) {
+      console.error('❌ Database service not available after import');
+      return NextResponse.json({
+        success: false,
+        error: 'Database service not available',
+        message: 'Database service could not be loaded'
+      }, { status: 500 });
+    }
+
     // Validate request
     const validatedData = assignPortfolioSchema.parse(body);
     const { assignments } = validatedData;
 
+    console.log('🔄 Initializing database service...');
     await databaseService.initialize();
 
     // Process each assignment

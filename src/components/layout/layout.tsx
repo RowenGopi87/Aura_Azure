@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { RightPanel } from './right-panel';
+import { EmiratesPillNavigation } from './emirates-pill-nav';
 import { useSettingsInitialization } from '@/hooks/use-settings-initialization';
 import { ResizeHandle } from '@/components/ui/resize-handle';
 
@@ -42,17 +43,19 @@ export function Layout({ children }: LayoutProps) {
   };
   
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
+    <div className="h-screen emirates-gradient-bg flex overflow-hidden">
+      {/* Emirates Pill Navigation - Always visible */}
+      <EmiratesPillNavigation />
+      
       {/* Left Sidebar - Don't render for Version 1 routes */}
-      {!isVersion1 && <Sidebar />}
+      {/* {!isVersion1 && <Sidebar />} */}
       
       {/* Center Content Area */}
       <div 
-        className="flex-1 h-screen flex flex-col transition-all duration-300 ease-in-out border-l border-r border-gray-200 bg-gray-50"
+        className="flex-1 h-screen flex flex-col transition-all duration-300 ease-in-out"
         style={{
-          marginLeft: !isVersion1 && sidebarOpen ? `${sidebarWidth}px` : '0',
+          marginLeft: '89px', // Space for Emirates pill navigation only
           marginRight: rightPanelOpen ? `${rightPanelWidth + (rightPanelCollapsed ? 0 : 8)}px` : '0', // Add resize handle width
-          borderLeftWidth: !isVersion1 && sidebarOpen ? '1px' : '0px',
           borderRightWidth: rightPanelOpen ? '1px' : '0px',
         }}
       >

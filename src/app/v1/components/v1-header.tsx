@@ -16,8 +16,11 @@ import {
   User, 
   LogOut, 
   Shield,
-  ChevronDown
+  ChevronDown,
+  Mail,
+  Bell
 } from "lucide-react";
+import { EmiratesLogo } from '@/components/ui/emirates-logo';
 import Link from "next/link";
 
 export function Version1Header() {
@@ -42,54 +45,52 @@ export function Version1Header() {
   }, [showUserProfile]);
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 flex-shrink-0">
-      {/* Left side */}
-      <div className="flex items-center space-x-4">
-        <MobileSidebarToggle />
+    <header className="h-20 flex items-center justify-between px-6 flex-shrink-0">
+      {/* Left Section - Navigation */}
+      <div className="flex items-center space-x-6 min-w-0 flex-1" style={{ marginLeft: '89px' }}>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-semibold emirates-text-primary letter-spacing-wide">
+            AURA AI Platform
+          </h1>
+          <p className="text-sm emirates-text-muted">Intelligent software development with AI assistance</p>
+        </div>
       </div>
 
-      {/* Right side - Clean Navigation */}
-      <div className="flex items-center space-x-2">
-        <NotificationDropdown />
+      {/* Right Section - Emirates Style Navigation */}
+      <div className="flex items-center space-x-1">
+        {/* Mail Button */}
+        <button className="emirates-nav-button w-9 h-9 flex items-center justify-center relative">
+          <Mail size={14} className="emirates-text-secondary" />
+          <div className="absolute top-3 right-3 w-1 h-1 bg-red-500 rounded-full border border-white"></div>
+        </button>
         
-        <Button 
-          variant={rightPanelOpen ? "default" : "ghost"} 
-          size="sm" 
-          className="p-2"
+        {/* Notification Button */}
+        <div className="emirates-nav-button w-9 h-9 flex items-center justify-center relative">
+          <NotificationDropdown />
+        </div>
+        
+        {/* Assistant/Bot Button */}
+        <button 
+          className={`emirates-nav-button w-9 h-9 flex items-center justify-center ${rightPanelOpen ? 'emirates-nav-button-active' : ''}`}
           onClick={toggleRightPanel}
           title="Toggle Aura Assistant"
         >
-          <Bot size={18} />
-        </Button>
+          <Bot size={14} className={rightPanelOpen ? "text-white" : "emirates-text-secondary"} />
+        </button>
         
-        {/* Admin Dashboard Link for admin users */}
-        {isAdmin && (
-          <Link href="/admin/audit">
-            <Button variant="outline" size="sm" className="border-purple-200 text-purple-700 hover:bg-purple-50">
-              <Shield size={16} className="mr-2" />
-              <span className="hidden md:inline">Admin</span>
-            </Button>
-          </Link>
-        )}
-        
-        <div className="h-4 w-px bg-gray-300"></div>
-        
-        {/* User Profile Dropdown */}
+        {/* User Profile Button */}
         <div className="relative" ref={profileRef}>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex items-center space-x-2 p-2"
+          <button 
+            className="emirates-nav-button h-9 px-4 flex items-center space-x-2"
             onClick={() => setShowUserProfile(!showUserProfile)}
           >
-            <User size={18} />
-            {user && (
-              <>
-                <span className="hidden md:inline text-sm font-medium">{user.displayName}</span>
-                <ChevronDown className="h-4 w-4" />
-              </>
-            )}
-          </Button>
+            <span className="text-sm font-bold emirates-text-secondary">
+              {user?.displayName?.toUpperCase() || 'USER'}
+            </span>
+            <div className="w-9 h-9 bg-gray-300 rounded-full flex items-center justify-center ml-2">
+              <User size={14} className="text-gray-600" />
+            </div>
+          </button>
           
           {showUserProfile && (
             <div className="absolute right-0 top-full mt-2 z-50">
@@ -99,16 +100,6 @@ export function Version1Header() {
             </div>
           )}
         </div>
-        
-        {/* Quick Logout */}
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={logout}
-          className="border-slate-200 text-slate-700 hover:bg-slate-50"
-        >
-          <LogOut size={16} />
-        </Button>
       </div>
     </header>
   );

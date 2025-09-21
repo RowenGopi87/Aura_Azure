@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { PortfolioAssignmentModal } from '@/components/ui/portfolio-assignment-modal';
+import { PortfolioMappingModal } from '@/components/ui/portfolio-mapping-modal';
 import { IdeasTable } from '@/components/ui/ideas-table';
 import { 
   Plus, 
@@ -40,7 +41,8 @@ import {
   Eye,
   Brain,
   Edit3,
-  Save
+  Save,
+  FolderOpen
 } from 'lucide-react';
 import Link from "next/link";
 
@@ -319,6 +321,10 @@ export default function Version1IdeasPage() {
   const [isPortfolioAssignmentOpen, setIsPortfolioAssignmentOpen] = useState(false);
   const [generatedInitiativesForAssignment, setGeneratedInitiativesForAssignment] = useState<any[]>([]);
   const [pendingInitiatives, setPendingInitiatives] = useState<any[]>([]);
+  
+  // Portfolio mapping modal states
+  const [isPortfolioMappingOpen, setIsPortfolioMappingOpen] = useState(false);
+  const [portfolios, setPortfolios] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -983,6 +989,98 @@ export default function Version1IdeasPage() {
     setGeneratedInitiativesForAssignment([]);
   };
 
+  const handlePortfolioMappingOpen = async () => {
+    try {
+      console.log('🔍 Loading portfolio mapping data...');
+      
+      // Load all initiatives and portfolios
+      const [initiativesResponse, portfoliosResponse] = await Promise.all([
+        fetch('/api/initiatives'),
+        fetch('/api/portfolios')
+      ]);
+
+      console.log('📊 API responses:', {
+        initiatives: { ok: initiativesResponse.ok, status: initiativesResponse.status },
+        portfolios: { ok: portfoliosResponse.ok, status: portfoliosResponse.status }
+      });
+
+      if (initiativesResponse.ok && portfoliosResponse.ok) {
+        const initiativesData = await initiativesResponse.json();
+        const portfoliosData = await portfoliosResponse.json();
+        
+        console.log('📋 Loaded data:', {
+          initiatives: initiativesData.initiatives?.length || 0,
+          portfolios: portfoliosData.portfolios?.length || 0
+        });
+        
+        // The initiatives API returns initiatives in the 'initiatives' field
+        setGeneratedInitiativesForAssignment(initiativesData.initiatives || []);
+        setPortfolios(portfoliosData.portfolios || []);
+        setIsPortfolioMappingOpen(true);
+      } else {
+        console.error('❌ API call failed:', {
+          initiatives: { ok: initiativesResponse.ok, status: initiativesResponse.status },
+          portfolios: { ok: portfoliosResponse.ok, status: portfoliosResponse.status }
+        });
+        
+        // Try to get error details
+        if (!initiativesResponse.ok) {
+          const errorText = await initiativesResponse.text();
+          console.error('Initiatives API error:', errorText);
+        }
+        if (!portfoliosResponse.ok) {
+          const errorText = await portfoliosResponse.text();
+          console.error('Portfolios API error:', errorText);
+        }
+        
+        notify.error('Portfolio Mapping Error', 'Failed to load data for portfolio mapping');
+      }
+    } catch (error) {
+      console.error('Error loading portfolio mapping data:', error);
+      notify.error('Portfolio Mapping Error', 'Failed to load portfolio mapping data');
+    }
+  };
+
+  const handlePortfolioMappingSave = async (mappings: Record<string, string>) => {
+    try {
+      // Prepare assignment data for the API
+      const assignments = Object.entries(mappings)
+        .filter(([_, portfolioId]) => portfolioId) // Only include assigned items
+        .map(([initiativeId, portfolioId]) => ({
+          initiativeId,
+          portfolioId
+        }));
+
+      if (assignments.length === 0) {
+        console.log('No assignments to save');
+        return;
+      }
+
+      // Call the assignment API
+      const response = await fetch('/api/initiatives/assign-portfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignments })
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to save portfolio assignments');
+      }
+
+      console.log(`✅ Successfully saved ${assignments.length} portfolio assignments`);
+      notify.success('Portfolio Assignment Complete', `Successfully assigned ${assignments.length} initiatives to portfolios`);
+      
+      // Refresh initiatives from store
+      loadFromDatabase();
+      
+    } catch (error) {
+      console.error('Failed to save portfolio mappings:', error);
+      throw error; // Re-throw to let the modal handle the error display
+    }
+  };
+
   // Helper function to try LLM generation with fallback
   const tryLLMWithFallback = async (apiEndpoint: string, requestData: any, moduleName: string) => {
     // First try primary LLM
@@ -1330,110 +1428,124 @@ export default function Version1IdeasPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
 
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Idea</h1>
-          <p className="text-gray-600 mt-1">Submit and manage business idea use cases</p>
-        </div>
+      {/* Glass Effect Container */}
+      <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg shadow-xl p-6 space-y-6">
         
-        <div className="flex space-x-3">
-          {/* Background Generation Indicator */}
-          {Object.keys(generatingInitiatives).length > 0 && (
-            <div className="flex items-center space-x-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-              <RefreshCw size={16} className="animate-spin text-blue-600" />
-              <span className="text-sm text-blue-700 font-medium">
-                {Object.keys(generatingInitiatives).length} Initiative Generation{Object.keys(generatingInitiatives).length !== 1 ? 's' : ''} Running
-              </span>
-              <Badge variant="outline" className="bg-blue-100 text-blue-700 text-xs">
-                Background
-              </Badge>
-            </div>
-          )}
-
-          <div className="relative">
-            <input
-              type="file"
-              id="file-upload"
-              className="hidden"
-              accept=".pdf,.docx,.doc"
-              onChange={handleFileUpload}
-            />
-            <Button 
-              variant="outline" 
-              className="flex items-center space-x-2"
-              onClick={() => {
-                console.log('📤 Upload Document button clicked');
-                // Reset any previous upload states before opening file picker
-                resetUploadSection();
-                const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-                if (fileInput) {
-                  console.log('📎 Opening file picker');
-                  fileInput.click();
-                } else {
-                  console.error('❌ File input element not found');
-                }
-              }}
-              disabled={isUploading || isParsing}
-            >
-              <Upload size={16} />
-              <span>Upload Document</span>
-            </Button>
+        {/* Header with Buttons */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Business Brief Management</h1>
+            <p className="text-gray-600 mt-1">Create, search and track business briefs</p>
           </div>
           
-          <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-            <DialogTrigger asChild>
+          <div className="flex space-x-3">
+            {/* Background Generation Indicator */}
+            {Object.keys(generatingInitiatives).length > 0 && (
+              <div className="flex items-center space-x-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                <RefreshCw size={16} className="animate-spin text-blue-600" />
+                <span className="text-sm text-blue-700 font-medium">
+                  {Object.keys(generatingInitiatives).length} Initiative Generation{Object.keys(generatingInitiatives).length !== 1 ? 's' : ''} Running
+                </span>
+                <Badge variant="outline" className="bg-blue-100 text-blue-700 text-xs">
+                  Background
+                </Badge>
+              </div>
+            )}
+
+            <Button 
+              variant="outline"
+              className="flex items-center space-x-2"
+              onClick={handlePortfolioMappingOpen}
+            >
+              <Building2 size={16} />
+              <span>Portfolio Mapping</span>
+            </Button>
+
+            <div className="relative">
+              <input
+                type="file"
+                id="file-upload"
+                className="hidden"
+                accept=".pdf,.docx,.doc"
+                onChange={handleFileUpload}
+              />
               <Button 
+                variant="outline" 
                 className="flex items-center space-x-2"
                 onClick={() => {
-                  console.log('📝 New Business Brief button clicked');
-                  resetUploadSection(); // Ensure clean state
+                  console.log('📤 Upload Document button clicked');
+                  resetUploadSection();
+                  const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+                  if (fileInput) {
+                    console.log('📎 Opening file picker');
+                    fileInput.click();
+                  } else {
+                    console.error('❌ File input element not found');
+                  }
                 }}
+                disabled={isUploading || isParsing}
               >
-                <Plus size={16} />
-                <span>New Business Brief</span>
+                <Upload size={16} />
+                <span>Upload Document</span>
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            </div>
+            
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="bg-black text-white hover:bg-gray-800 flex items-center space-x-2"
+                  onClick={() => {
+                    console.log('📝 New Business Brief button clicked');
+                    resetUploadSection();
+                  }}
+                >
+                  <Plus size={16} />
+                  <span>New Business Brief</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto modal-scroll">
               <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <DialogTitle>Business Brief</DialogTitle>
-                    <DialogDescription>Submit your business idea for review</DialogDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-lg border">
-                      <input
-                        type="checkbox"
-                        id="use-real-llm"
-                        checked={useRealLLM}
-                        onChange={(e) => setUseRealLLM(e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="use-real-llm" className="text-sm text-gray-700 font-medium">
-                        Use Real LLM
-                      </label>
-                      <div className="text-xs text-gray-500">
-                        {useRealLLM ? '🧠 AI Analysis' : '🎭 Mock Analysis'}
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={populateBadSampleData}
-                      className="bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-                    >
-                      <Lightbulb className="w-4 h-4 mr-1" />
-                      Load Test Data
-                    </Button>
+                <DialogTitle className="flex items-center gap-3">
+                  <FileText className="h-5 w-5" />
+                  Business Brief
+                </DialogTitle>
+                <DialogDescription>
+                  Submit your business idea for review
+                </DialogDescription>
+              </DialogHeader>
+              
+              {/* Controls moved below header */}
+              <div className="flex items-center justify-end space-x-2 pb-4 border-b">
+                <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-lg border">
+                  <input
+                    type="checkbox"
+                    id="use-real-llm"
+                    checked={useRealLLM}
+                    onChange={(e) => setUseRealLLM(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="use-real-llm" className="text-sm text-gray-700 font-medium">
+                    Use Real LLM
+                  </label>
+                  <div className="text-xs text-gray-500">
+                    {useRealLLM ? '🧠 AI Analysis' : '🎭 Mock Analysis'}
                   </div>
                 </div>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={populateBadSampleData}
+                  className="bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+                >
+                  <Lightbulb className="w-4 h-4 mr-1" />
+                  Load Test Data
+                </Button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-6 business-brief-form p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1641,7 +1753,7 @@ export default function Version1IdeasPage() {
                   <Button type="button" variant="outline" onClick={handleCancelDialog}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isAssessing}>
+                  <Button type="submit" disabled={isAssessing} className="bg-black text-white hover:bg-gray-800">
                     {isAssessing ? (
                       <>
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -1658,123 +1770,113 @@ export default function Version1IdeasPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            placeholder="Search business briefs by title, description, or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-48">
-            <Filter size={16} className="mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="in_review">In Review</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Summary Cards */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+        {/* Filters */}
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder="Search business briefs by title, description, or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-48">
+              <Filter size={16} className="mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="in_review">In Review</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Summary Cards - Condensed */}
+        <div className="bg-gray-200/60 backdrop-blur-sm border border-gray-300/40 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <CardTitle className="text-lg">Business Brief Summary</CardTitle>
-              <CardDescription>Overall business brief metrics and status</CardDescription>
+              <h3 className="text-base font-semibold text-gray-900">Business Brief Summary</h3>
+              <p className="text-xs text-gray-600">Overall business brief metrics</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSummaryCardsVisible(!summaryCardsVisible)}
-              className="h-8 w-8 p-0"
+              className="h-6 w-6 p-0"
             >
-              {summaryCardsVisible ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {summaryCardsVisible ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </Button>
           </div>
-        </CardHeader>
-        {summaryCardsVisible && (
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Business Briefs</p>
-                      <p className="text-2xl font-bold text-gray-900">{useCases.length}</p>
-                    </div>
-                    <FileText className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
+          
+          {summaryCardsVisible && (
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <FileText className="h-6 w-6 text-blue-600 mr-2" />
+                  <span className="text-2xl font-bold text-gray-900">{useCases.length}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Total Business Briefs</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Approved</p>
-                      <p className="text-2xl font-bold text-green-600">{useCases.filter(uc => uc.status === 'approved').length}</p>
-                      <p className="text-xs text-gray-500">{useCases.length > 0 ? Math.round((useCases.filter(uc => uc.status === 'approved').length / useCases.length) * 100) : 0}% of total</p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <CheckCircle className="h-6 w-6 text-green-600 mr-2" />
+                  <span className="text-2xl font-bold text-green-600">{useCases.filter(uc => uc.status === 'approved').length}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Approved</p>
+                <p className="text-xs text-gray-500">{useCases.length > 0 ? Math.round((useCases.filter(uc => uc.status === 'approved').length / useCases.length) * 100) : 0}% of total</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">In Review</p>
-                      <p className="text-2xl font-bold text-blue-600">{useCases.filter(uc => uc.status === 'in_review').length}</p>
-                      <p className="text-xs text-gray-500">{useCases.length > 0 ? Math.round((useCases.filter(uc => uc.status === 'in_review').length / useCases.length) * 100) : 0}% of total</p>
-                    </div>
-                    <Clock className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <Clock className="h-6 w-6 text-blue-600 mr-2" />
+                  <span className="text-2xl font-bold text-blue-600">{useCases.filter(uc => uc.status === 'in_review').length}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">In Review</p>
+                <p className="text-xs text-gray-500">{useCases.length > 0 ? Math.round((useCases.filter(uc => uc.status === 'in_review').length / useCases.length) * 100) : 0}% of total</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Completion Rate</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {useCases.length > 0 
-                          ? Math.round((useCases.filter(uc => uc.status === 'approved').length / useCases.length) * 100) 
-                          : 0}%
-                      </p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-purple-600" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <TrendingUp className="h-6 w-6 text-purple-600 mr-2" />
+                  <span className="text-2xl font-bold text-purple-600">
+                    {useCases.length > 0 
+                      ? Math.round((useCases.filter(uc => uc.status === 'approved').length / useCases.length) * 100) 
+                      : 0}%
+                  </span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Completion Rate</p>
+              </div>
             </div>
-          </CardContent>
-        )}
-      </Card>
+          )}
+        </div>
 
-      {/* Business Brief Ideas Table */}
-      <IdeasTable
-        businessBriefs={filteredUseCases}
-        generatingInitiatives={generatingInitiatives}
-        onView={handleViewDetails}
-        onEdit={handleEditUseCase}
-        onDelete={handleDeleteUseCase}
-        onStatusChange={handleStatusChange}
-        onGenerateInitiatives={handleGenerateInitiatives}
-      />
+        {/* Business Brief Ideas Table */}
+        <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+          <div className="p-3 border-b border-gray-200/50">
+            <h3 className="text-base font-semibold text-gray-900">Business Briefs</h3>
+            <p className="text-xs text-gray-600">Current briefs with details</p>
+          </div>
+          <IdeasTable
+          businessBriefs={filteredUseCases}
+          generatingInitiatives={generatingInitiatives}
+          onView={handleViewDetails}
+          onEdit={handleEditUseCase}
+          onDelete={handleDeleteUseCase}
+          onStatusChange={handleStatusChange}
+          onGenerateInitiatives={handleGenerateInitiatives}
+        />
+        </div>
+      
+      </div>
 
       {/* View Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
@@ -2043,7 +2145,7 @@ export default function Version1IdeasPage() {
 
       {/* Quality Assessment Modal */}
       <Dialog open={isQualityAssessmentOpen} onOpenChange={setIsQualityAssessmentOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto modal-scroll">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               {qualityAssessment?.overallGrade === 'gold' && (
@@ -2084,7 +2186,7 @@ export default function Version1IdeasPage() {
           </DialogHeader>
 
           {qualityAssessment && (
-            <div className="space-y-6">
+            <div className="space-y-6 quality-assessment-results p-6">
               {/* Fallback Warning Card */}
               {qualityAssessment.assessmentMode === 'mock-fallback' && (
                 <Card className="border-l-4 border-l-amber-500 bg-amber-50">
@@ -2325,7 +2427,7 @@ export default function Version1IdeasPage() {
                     <div className="flex justify-center">
                       <Button
                         onClick={applyAcceptedSuggestions}
-                        className="bg-blue-600 hover:bg-blue-700 w-full"
+                        className="bg-black hover:bg-gray-800 text-white w-full"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Apply Selected Improvements
@@ -2337,7 +2439,7 @@ export default function Version1IdeasPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       onClick={handleManualImprovements}
-                      className="bg-orange-600 hover:bg-orange-700"
+                      className="bg-gray-500 hover:bg-gray-600 text-white"
                     >
                       <Edit3 className="w-4 h-4 mr-1" />
                       <span className="hidden sm:inline">Edit Manually</span>
@@ -2352,7 +2454,7 @@ export default function Version1IdeasPage() {
                         setAcceptedSuggestions({});
                         notify.success('Saved!', 'Business brief saved successfully.');
                       }}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-black hover:bg-gray-800 text-white"
                     >
                       <Save className="w-4 h-4 mr-1" />
                       Save
@@ -2371,6 +2473,15 @@ export default function Version1IdeasPage() {
         onClose={() => setIsPortfolioAssignmentOpen(false)}
         initiatives={generatedInitiativesForAssignment}
         onAssignmentComplete={handlePortfolioAssignmentComplete}
+      />
+
+      {/* Portfolio Mapping Modal */}
+      <PortfolioMappingModal
+        isOpen={isPortfolioMappingOpen}
+        onClose={() => setIsPortfolioMappingOpen(false)}
+        initiatives={generatedInitiativesForAssignment}
+        portfolios={portfolios}
+        onSave={handlePortfolioMappingSave}
       />
     </div>
   );

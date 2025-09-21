@@ -44,38 +44,52 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 18px;
+  
+  /* Emirates Brand Colors */
+  --emirates-red: #D71921;
+  --emirates-white: #FFFFFF;
+  --emirates-gradient-start: #C4D4D6;
+  --emirates-gradient-end: #CFE1E3;
+  --emirates-text-primary: #000000;
+  --emirates-text-secondary: #343A40;
+  --emirates-text-muted: #77787B;
+  --emirates-border: #DEE2E6;
+  --emirates-glass-bg: rgba(255, 255, 255, 0.15);
+  --emirates-glass-border: rgba(255, 255, 255, 0.5);
+  
+  /* Updated theme variables with Emirates colors */
+  --background: linear-gradient(149.37deg, var(--emirates-gradient-start) 13.03%, var(--emirates-gradient-end) 86.97%);
+  --foreground: var(--emirates-text-primary);
+  --card: linear-gradient(92.99deg, rgba(255, 255, 255, 0.15) 13.93%, rgba(255, 255, 255, 0.075) 99.75%);
+  --card-foreground: var(--emirates-text-primary);
+  --popover: rgba(255, 255, 255, 0.95);
+  --popover-foreground: var(--emirates-text-primary);
+  --primary: var(--emirates-red);
+  --primary-foreground: var(--emirates-white);
+  --secondary: rgba(255, 255, 255, 0.8);
+  --secondary-foreground: var(--emirates-text-primary);
+  --muted: rgba(255, 255, 255, 0.5);
+  --muted-foreground: var(--emirates-text-muted);
+  --accent: rgba(255, 255, 255, 0.8);
+  --accent-foreground: var(--emirates-text-primary);
+  --destructive: #E14034;
+  --border: var(--emirates-border);
+  --input: rgba(255, 255, 255, 0.8);
+  --ring: var(--emirates-red);
+  --chart-1: #0471FF;
+  --chart-2: #0ED338;
+  --chart-3: #B300FF;
+  --chart-4: #E14034;
+  --chart-5: #77787B;
+  --sidebar: rgba(255, 255, 255, 0.2);
+  --sidebar-foreground: var(--emirates-text-primary);
+  --sidebar-primary: var(--emirates-red);
+  --sidebar-primary-foreground: var(--emirates-white);
+  --sidebar-accent: rgba(255, 255, 255, 0.05);
+  --sidebar-accent-foreground: var(--emirates-text-primary);
+  --sidebar-border: rgba(255, 255, 255, 0.5);
+  --sidebar-ring: var(--emirates-red);
 }
 
 .dark {
@@ -117,7 +131,10 @@
     @apply border-border outline-ring/50;
   }
   html, body {
-    @apply bg-background text-foreground;
+    background: linear-gradient(149.37deg, #C4D4D6 13.03%, #CFE1E3 86.97%);
+    background-attachment: fixed;
+    color: var(--emirates-text-primary);
+    font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     height: 100%;
     overflow: hidden;
   }
@@ -195,4 +212,197 @@
 
 #chat-messages-area::-webkit-scrollbar-thumb:hover {
   background: #111827 !important;
+}
+
+/* Emirates Theme Specific Styles */
+.emirates-gradient-bg {
+  background: linear-gradient(149.37deg, #C4D4D6 13.03%, #CFE1E3 86.97%);
+}
+
+.emirates-glass-card {
+  background: linear-gradient(92.99deg, rgba(255, 255, 255, 0.15) 13.93%, rgba(255, 255, 255, 0.075) 99.75%);
+  border: 0.5px solid #FFFFFF;
+  border-radius: 18px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.emirates-glass-modal {
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.emirates-nav-button {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #DEE2E6;
+  border-radius: 28px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.emirates-nav-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.emirates-nav-button-active {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.emirates-sidebar {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 44px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  width: 61px;
+  max-width: 61px;
+  min-width: 61px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.emirates-logo-bg {
+  background: #D71921;
+}
+
+.emirates-text-primary {
+  color: #000000;
+}
+
+.emirates-text-secondary {
+  color: #343A40;
+}
+
+.emirates-text-muted {
+  color: #77787B;
+}
+
+/* Clean modal scroll bar styles */
+.modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Business Brief Dialog specific styling */
+.business-brief-form {
+  background: rgba(241, 245, 249, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(203, 213, 225, 0.4);
+}
+
+.business-brief-form .form-section {
+  background: rgba(248, 250, 252, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+/* Override form field focus colors to black */
+input:focus,
+textarea:focus,
+select:focus,
+.focus\:border-blue-500:focus,
+.focus\:ring-blue-500:focus,
+.focus\:ring-blue-200:focus {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+  outline: none !important;
+}
+
+/* Specific overrides for form components */
+.business-brief-form input:focus,
+.business-brief-form textarea:focus,
+.business-brief-form select:focus {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Override Tailwind focus utilities */
+.focus\:border-red-500:focus {
+  border-color: #000000 !important;
+}
+
+.focus\:ring-red-500:focus {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Quality Assessment Results Styling */
+.quality-assessment-results {
+  background: rgba(241, 245, 249, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(203, 213, 225, 0.4);
+}
+
+.quality-assessment-results .assessment-section {
+  background: rgba(248, 250, 252, 0.7);
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.quality-assessment-results .grade-card {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+/* Black progress bar styling - comprehensive override */
+.progress-black {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.progress-black [data-slot="progress-indicator"] {
+  background-color: #000000 !important;
+}
+
+.progress-black .bg-primary {
+  background-color: #000000 !important;
+}
+
+.progress-black .bg-primary\/20 {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Force override all progress bar primary colors */
+.progress-black * {
+  --tw-bg-opacity: 1 !important;
+}
+
+.progress-black [class*="bg-primary"]:not([class*="bg-primary/20"]) {
+  background-color: #000000 !important;
+}
+
+.progress-black [class*="bg-primary/20"] {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Radix UI specific override */
+.progress-black [data-radix-collection-item] {
+  background-color: #000000 !important;
 }

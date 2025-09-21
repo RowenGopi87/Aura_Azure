@@ -133,7 +133,7 @@ export function PortfolioMappingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto modal-scroll">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Building2 className="w-5 h-5 text-blue-600" />

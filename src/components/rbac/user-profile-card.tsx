@@ -65,7 +65,7 @@ export function UserProfileCard() {
   };
 
   return (
-    <Card className="w-80 shadow-lg border-slate-200">
+    <Card className="w-80 shadow-lg border-slate-200 bg-white">
       <CardHeader className="pb-3">
         <div className="flex items-start space-x-3">
           <div className="h-12 w-12 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -122,72 +122,30 @@ export function UserProfileCard() {
         </div>
 
         {/* Access Summary */}
-        <div className="p-3 bg-slate-50 rounded-lg">
-          <div className="text-sm text-slate-700">
+        <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg">
+          <div className="text-sm font-medium text-gray-700">
             Access to {accessibleModules.length} modules
           </div>
         </div>
 
-        {/* Permissions Toggle */}
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPermissions(!showPermissions)}
-            className="w-full justify-between text-left"
-          >
-            <span className="flex items-center space-x-2">
-              <Shield className="h-4 w-4" />
-              <span>Module Permissions</span>
-            </span>
-            {showPermissions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-          
-          {showPermissions && (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {permissions.map((permission) => (
-                <div 
-                  key={`${permission.moduleName}`}
-                  className={`p-2 rounded border text-xs ${
-                    permission.canAccess 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={`font-medium ${
-                      permission.canAccess ? 'text-green-700' : 'text-red-700'
-                    }`}>
-                      {permission.moduleDisplayName}
-                    </span>
-                    <div className="flex space-x-1">
-                      {permission.canRead && (
-                        <div className="p-1 bg-blue-100 rounded text-blue-600" title="Read">
-                          <Eye className="h-3 w-3" />
-                        </div>
-                      )}
-                      {permission.canWrite && (
-                        <div className="p-1 bg-orange-100 rounded text-orange-600" title="Write">
-                          <Edit3 className="h-3 w-3" />
-                        </div>
-                      )}
-                      {permission.canDelete && (
-                        <div className="p-1 bg-red-100 rounded text-red-600" title="Delete">
-                          <Trash2 className="h-3 w-3" />
-                        </div>
-                      )}
-                      {permission.canAdmin && (
-                        <div className="p-1 bg-purple-100 rounded text-purple-600" title="Admin">
-                          <Crown className="h-3 w-3" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Admin Access - Only show for admin users */}
+        {isAdmin && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-gray-700 mb-2">Admin Access</div>
+            <Link href="/admin/audit" className="block">
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <Shield className="h-4 w-4 mr-2" />
+                Admin Dashboard
+              </Button>
+            </Link>
+            <Link href="/v1/admin" className="block">
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <Settings className="h-4 w-4 mr-2" />
+                Admin Settings
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Session Info */}
         <div className="pt-2 border-t border-gray-200">
@@ -198,21 +156,12 @@ export function UserProfileCard() {
         </div>
 
         {/* Actions */}
-        <div className="flex space-x-2 pt-2">
-          {isAdmin && (
-            <Link href="/admin/audit" className="flex-1">
-              <Button variant="outline" size="sm" className="w-full">
-                <Settings className="h-4 w-4 mr-2" />
-                Admin Dashboard
-              </Button>
-            </Link>
-          )}
-          
+        <div className="space-y-2 pt-2">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={logout}
-            className={`${isAdmin ? 'flex-1' : 'w-full'} border-slate-200 text-slate-700 hover:bg-slate-50`}
+            className="w-full border-slate-200 text-slate-700 hover:bg-slate-50"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout

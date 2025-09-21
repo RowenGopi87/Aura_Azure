@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { Version1Sidebar } from '@/app/v1/components/v1-sidebar';
 import { Version1Header } from '@/app/v1/components/v1-header';
 import { RightPanel } from '@/components/layout/right-panel';
+import { EmiratesPillNavigation } from '@/components/layout/emirates-pill-nav';
 import { useAppStore } from '@/store/app-store';
 import { useSettingsInitialization } from '@/hooks/use-settings-initialization';
 
@@ -24,16 +25,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const sidebarWidth = getSidebarWidth();
   
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
+    <div className="h-screen emirates-gradient-bg flex overflow-hidden">
+      {/* Emirates Pill Navigation */}
+      <EmiratesPillNavigation />
+      
       {/* Left Sidebar - Version 1 Style */}
-      <Version1Sidebar />
+      {/* <Version1Sidebar /> */}
       
       {/* Center Content Area */}
       <div 
-        className="flex-1 h-screen flex flex-col transition-all duration-300 ease-in-out border-l border-gray-200 bg-white"
+        className="flex-1 h-screen flex flex-col transition-all duration-300 ease-in-out"
         style={{
-          marginLeft: sidebarOpen ? `${sidebarWidth}px` : '0',
-          borderLeftWidth: sidebarOpen ? '1px' : '0px',
+          marginLeft: '89px', // Space for Emirates pill navigation only
         }}
       >
         <Version1Header />

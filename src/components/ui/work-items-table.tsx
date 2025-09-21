@@ -468,7 +468,7 @@ export function WorkItemsTable({
       <React.Fragment key={`${type}-${item.id}`}>
         {/* Main row */}
         <div
-          className={`group flex items-center px-2 py-1 hover:bg-gray-50 border-b border-gray-100 cursor-pointer ${level > 0 ? 'bg-gray-25' : ''}`}
+          className={`group flex items-center px-2 py-1 bg-gray-200/30 hover:bg-gray-200/50 border-b border-gray-300/30 cursor-pointer`}
           style={{ marginLeft: `${level * 24}px` }}
           onContextMenu={(e) => handleContextMenu(e, item, type)}
           onClick={() => hasChildren && toggleExpanded(item.id)}
@@ -563,16 +563,10 @@ export function WorkItemsTable({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Target size={18} />
-          Work Items Hierarchy
-        </CardTitle>
-      </CardHeader>
+    <div className="border-0">
       <CardContent className="p-0">
         {/* Table Header */}
-        <div className="flex items-center px-2 py-1 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700 sticky top-0 z-10">
+        <div className="flex items-center px-2 py-1 bg-gray-200/40 border-b border-gray-300/40 text-sm font-medium text-gray-700 sticky top-0 z-10">
           <div className="w-6"></div> {/* Expand column */}
           <div className="flex-1 min-w-0">Work Item</div>
           <div className="w-16 text-center">Priority</div>
@@ -589,7 +583,7 @@ export function WorkItemsTable({
             <React.Fragment key={portfolioId}>
               {/* Portfolio Header */}
               <div 
-                className="flex items-center gap-3 px-3 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 cursor-pointer"
+                className="flex items-center gap-3 px-3 py-3 bg-gray-200/40 border-b border-gray-300/40 cursor-pointer"
                 onClick={() => toggleExpanded(`portfolio-${portfolioId}`)}
               >
                 <button>
@@ -619,7 +613,7 @@ export function WorkItemsTable({
                   <React.Fragment key={businessBriefId}>
                     {/* Business Brief Header */}
                     <div 
-                      className="flex items-center gap-3 px-6 py-2 bg-amber-50 border-b border-gray-100 cursor-pointer"
+                      className="flex items-center gap-3 px-6 py-2 bg-gray-200/35 border-b border-gray-300/35 cursor-pointer"
                       onClick={() => toggleExpanded(`brief-${businessBriefId}`)}
                     >
                       <button>
@@ -675,6 +669,6 @@ export function WorkItemsTable({
           </div>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 }

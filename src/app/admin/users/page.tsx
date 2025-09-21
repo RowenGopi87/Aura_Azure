@@ -228,23 +228,26 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">User & Role Management</h1>
-          <p className="text-gray-600">Manage user access and role assignments</p>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      
+      {/* Glass Effect Container */}
+      <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg shadow-xl p-6 space-y-6">
         
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
-      </div>
+        {/* Header with Buttons */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">User & Role Management</h1>
+            <p className="text-gray-600 mt-1">Manage user access and role assignments</p>
+          </div>
+          
+          <Button className="bg-black text-white hover:bg-gray-800">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
+        {/* Filters */}
+        <div className="bg-gray-200/60 backdrop-blur-sm border border-gray-300/40 rounded-lg p-4">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Search className="h-4 w-4 text-gray-500" />
@@ -272,10 +275,9 @@ export default function UserManagementPage() {
               </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Tabs defaultValue="users" className="space-y-6">
+        <Tabs defaultValue="users" className="space-y-6">
         <TabsList>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="permissions">Module Permissions</TabsTrigger>
@@ -283,7 +285,12 @@ export default function UserManagementPage() {
         </TabsList>
 
         <TabsContent value="users" className="space-y-6">
-          <Card>
+          <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+            <div className="p-3 border-b border-gray-200/50">
+              <h3 className="text-base font-semibold text-gray-900">User Management</h3>
+              <p className="text-xs text-gray-600">Manage user accounts and access</p>
+            </div>
+            <Card className="border-0 rounded-none">
             <CardHeader>
               <CardTitle>Users</CardTitle>
               <CardDescription>Manage user accounts and role assignments</CardDescription>
@@ -363,10 +370,16 @@ export default function UserManagementPage() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="permissions" className="space-y-6">
-          <Card>
+          <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+            <div className="p-3 border-b border-gray-200/50">
+              <h3 className="text-base font-semibold text-gray-900">Module Permissions</h3>
+              <p className="text-xs text-gray-600">Configure module access permissions</p>
+            </div>
+            <Card className="border-0 rounded-none">
             <CardHeader>
               <CardTitle>Module Permissions Matrix</CardTitle>
               <CardDescription>
@@ -493,10 +506,16 @@ export default function UserManagementPage() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="roles" className="space-y-6">
-          <Card>
+          <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+            <div className="p-3 border-b border-gray-200/50">
+              <h3 className="text-base font-semibold text-gray-900">Role Definitions</h3>
+              <p className="text-xs text-gray-600">View and manage role definitions</p>
+            </div>
+            <Card className="border-0 rounded-none">
             <CardHeader>
               <CardTitle>Role Definitions</CardTitle>
               <CardDescription>View and manage organizational roles and their default permissions</CardDescription>
@@ -528,8 +547,11 @@ export default function UserManagementPage() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
       </Tabs>
+      
+      </div>
     </div>
   );
 }

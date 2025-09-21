@@ -463,6 +463,7 @@ export function WorkItemEditModal({
           <Button 
             onClick={handleSave}
             disabled={!formData.title || !formData.description}
+            className="bg-black text-white hover:bg-gray-800"
           >
             Save Changes
           </Button>

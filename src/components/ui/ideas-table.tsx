@@ -133,7 +133,7 @@ export function IdeasTable({
           disabled={brief.status !== 'approved' || generatingInitiatives[brief.id]}
           className={`h-7 px-2 text-xs flex items-center gap-1 min-w-32 ${
             brief.status === 'approved' 
-              ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+              ? 'bg-black hover:bg-gray-800 text-white' 
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           title={brief.status !== 'approved' ? "Brief must be approved to generate initiatives" : 
@@ -189,22 +189,16 @@ export function IdeasTable({
 
   return (
     <>
-      <Card className="border border-gray-200">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText size={18} className="text-blue-600" />
-            Business Briefs
-          </CardTitle>
-        </CardHeader>
+      <div className="border-0">
         <CardContent className="p-0">
           {/* Table Header */}
-          <div className="flex items-center px-3 py-2 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700 sticky top-0 z-10">
+          <div className="flex items-center px-4 py-3 bg-gray-200/40 border-b border-gray-300/40 text-sm font-medium text-gray-700 sticky top-0 z-10">
             <div className="flex-1 min-w-0">Brief</div>
-            <div className="w-18 text-center">Priority</div>
-            <div className="w-18 text-center">Status</div>
-            <div className="w-20 text-center">Owner</div>
-            <div className="w-20 text-center">Progress</div>
-            <div className="w-48 text-center">Actions</div>
+            <div className="w-24 text-center">Priority</div>
+            <div className="w-32 text-center">Status</div>
+            <div className="w-32 text-center">Owner</div>
+            <div className="w-28 text-center">Progress</div>
+            <div className="w-52 text-center">Actions</div>
           </div>
 
           {/* Table Body */}
@@ -212,7 +206,7 @@ export function IdeasTable({
             {businessBriefs.map((brief) => (
               <div
                 key={brief.id}
-                className="group flex items-center px-3 py-2 hover:bg-gray-50 border-b border-gray-100 cursor-pointer"
+                className="group flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100 cursor-pointer"
                 onContextMenu={(e) => handleContextMenu(e, brief)}
                 onDoubleClick={() => handleDoubleClick(brief)}
                 onClick={() => onView(brief)}
@@ -256,22 +250,22 @@ export function IdeasTable({
                 </div>
 
                 {/* Priority */}
-                <div className="w-18 flex justify-center">
+                <div className="w-24 flex justify-center">
                   <span className={getPriorityBadge(brief.priority)}>
                     {brief.priority}
                   </span>
                 </div>
 
                 {/* Status with Inline Edit */}
-                <div className="w-18 flex justify-center" onClick={(e) => e.stopPropagation()}>
+                <div className="w-32 flex justify-center" onClick={(e) => e.stopPropagation()}>
                   <Select
                     value={brief.status}
                     onValueChange={(value) => onStatusChange(brief.id, value)}
                   >
-                    <SelectTrigger className="h-6 w-16 text-xs border border-gray-200 bg-white hover:bg-gray-50 shadow-sm">
+                    <SelectTrigger className="h-7 w-28 text-xs border border-gray-200 bg-white hover:bg-gray-50 shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="min-w-32">
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="submitted">Submitted</SelectItem>
                       <SelectItem value="in_review">In Review</SelectItem>
@@ -282,12 +276,12 @@ export function IdeasTable({
                 </div>
 
                 {/* Owner */}
-                <div className="w-20 text-xs text-gray-600 text-center truncate">
+                <div className="w-32 text-xs text-gray-600 text-center truncate px-2">
                   {brief.businessOwner || brief.submittedBy || 'Unassigned'}
                 </div>
 
                 {/* Progress */}
-                <div className="w-20 flex justify-center items-center">
+                <div className="w-28 flex justify-center items-center">
                   {brief.completionPercentage ? (
                     <div className="flex items-center gap-1 w-full max-w-14">
                       <Progress value={brief.completionPercentage} className="h-1 flex-1" />
@@ -301,7 +295,7 @@ export function IdeasTable({
                 </div>
 
                 {/* Actions */}
-                <div className="w-48 flex justify-center">
+                <div className="w-52 flex justify-center">
                   {renderActionButtons(brief)}
                 </div>
               </div>
@@ -316,7 +310,7 @@ export function IdeasTable({
             )}
           </div>
         </CardContent>
-      </Card>
+      </div>
 
       {/* Context Menu Portal */}
       {contextMenuPosition && contextMenuBrief && (

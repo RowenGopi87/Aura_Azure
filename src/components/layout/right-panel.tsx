@@ -35,16 +35,17 @@ export function RightPanel() {
   // Always render on desktop, handle mobile via CSS classes
   return (
     <div className={cn(
-      "fixed inset-y-0 right-0 z-50 flex flex-col bg-white border-l-2 border-gray-300 shadow-sm transition-all duration-300 ease-in-out overflow-hidden",
+      "fixed inset-y-0 right-0 z-50 flex flex-col backdrop-blur-md border-l border-white/30 shadow-xl transition-all duration-300 ease-in-out overflow-hidden",
       "md:block",
       rightPanelCollapsed ? "w-20" : "", // Increased from w-16 to w-20 for better icon spacing
       !rightPanelOpen && "md:block hidden"
     )}
     style={{
-      width: rightPanelOpen ? `${panelWidth}px` : '0px'
+      width: rightPanelOpen ? `${panelWidth}px` : '0px',
+      backgroundColor: '#C4D4D6'
     }}>
       {/* Header */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200/50 flex-shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -57,7 +58,7 @@ export function RightPanel() {
         {!rightPanelCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <Sparkles size={16} className="text-white" />
               </div>
               <div>
@@ -65,12 +66,12 @@ export function RightPanel() {
                 <div className="text-xs text-gray-500">AI-Powered Helper</div>
               </div>
             </div>
-            <Badge className="bg-green-100 text-green-700 text-xs">Online</Badge>
+            <Badge className="bg-gray-200/60 text-gray-700 text-xs">Online</Badge>
           </div>
         )}
         
         {rightPanelCollapsed && (
-          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
             <Sparkles size={16} className="text-white" />
           </div>
         )}
@@ -78,13 +79,13 @@ export function RightPanel() {
 
       {/* Tabs - only show when expanded */}
       {!rightPanelCollapsed && (
-        <div className="border-b border-gray-200 px-4 py-2 flex-shrink-0">
+        <div className="border-b border-gray-200/50 px-4 py-2 flex-shrink-0">
           <div className="flex space-x-1">
             <Button
               variant={activeTab === 'assistant' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('assistant')}
-              className="h-8 px-3 text-xs"
+              className={`h-8 px-3 text-xs ${activeTab === 'assistant' ? 'bg-black text-white hover:bg-gray-800' : ''}`}
             >
               <MessageSquare size={14} className="mr-1" />
               Chat
@@ -93,7 +94,7 @@ export function RightPanel() {
               variant={activeTab === 'help' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('help')}
-              className="h-8 px-3 text-xs"
+              className={`h-8 px-3 text-xs ${activeTab === 'help' ? 'bg-black text-white hover:bg-gray-800' : ''}`}
             >
               <HelpCircle size={14} className="mr-1" />
               Help
@@ -102,7 +103,7 @@ export function RightPanel() {
               variant={activeTab === 'settings' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('settings')}
-              className="h-8 px-3 text-xs"
+              className={`h-8 px-3 text-xs ${activeTab === 'settings' ? 'bg-black text-white hover:bg-gray-800' : ''}`}
             >
               <Settings size={14} className="mr-1" />
               Settings
@@ -168,15 +169,15 @@ export function RightPanel() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Help & Documentation</h3>
                   
                   <div className="space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <h4 className="font-medium text-blue-900 mb-2 flex items-center">
+                    <div className="bg-gray-200/60 backdrop-blur-sm p-4 rounded-lg border border-gray-300/40">
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                         <Bot size={16} className="mr-2" />
                         Aura Assistant
                       </h4>
-                      <p className="text-sm text-blue-800 mb-3">
+                      <p className="text-sm text-gray-700 mb-3">
                         Your AI-powered assistant for navigating the AuraV2 workflow and getting help with tasks.
                       </p>
-                      <div className="text-xs text-blue-700 space-y-1">
+                      <div className="text-xs text-gray-600 space-y-1">
                         <div>• Ask questions about business briefs</div>
                         <div>• Get guidance on workflow stages</div>
                         <div>• Request help with AI assessments</div>
@@ -184,7 +185,7 @@ export function RightPanel() {
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="bg-gray-100/50 backdrop-blur-sm p-4 rounded-lg border border-gray-300/40">
                       <h4 className="font-medium text-gray-900 mb-2">Quick Commands</h4>
                       <div className="text-xs text-gray-700 space-y-1">
                         <div><code className="bg-white px-1 rounded">/help</code> - Show available commands</div>
@@ -204,15 +205,15 @@ export function RightPanel() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Assistant Settings</h3>
                   
                   <div className="space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <h4 className="font-medium text-blue-900 mb-2 flex items-center">
+                    <div className="bg-gray-200/60 backdrop-blur-sm p-4 rounded-lg border border-gray-300/40">
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                         <Bot size={16} className="mr-2" />
                         Aura Assistant
                       </h4>
-                      <p className="text-sm text-blue-800 mb-3">
+                      <p className="text-sm text-gray-700 mb-3">
                         Your AI-powered assistant for navigating the AuraV2 workflow and getting help with tasks.
                       </p>
-                      <div className="text-xs text-blue-700 space-y-1">
+                      <div className="text-xs text-gray-600 space-y-1">
                         <div>• Ask questions about business briefs</div>
                         <div>• Get guidance on workflow stages</div>
                         <div>• Request help with AI assessments</div>
@@ -220,7 +221,7 @@ export function RightPanel() {
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="bg-gray-100/50 backdrop-blur-sm p-4 rounded-lg border border-gray-300/40">
                       <h4 className="font-medium text-gray-900 mb-2">AI Preferences</h4>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
@@ -238,7 +239,7 @@ export function RightPanel() {
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="bg-gray-100/50 backdrop-blur-sm p-4 rounded-lg border border-gray-300/40">
                       <h4 className="font-medium text-gray-900 mb-2">Display Options</h4>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
@@ -252,14 +253,23 @@ export function RightPanel() {
                       </div>
                     </div>
 
-                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                      <h4 className="font-medium text-yellow-900 mb-2">📍 LLM Configuration</h4>
-                      <p className="text-sm text-yellow-800 mb-2">
-                        V1 module LLM settings have been moved to the main Settings page for better organization.
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <h4 className="font-medium text-blue-900 mb-2 flex items-center">
+                        <Settings size={16} className="mr-2" />
+                        Admin Settings Available
+                      </h4>
+                      <p className="text-sm text-blue-800 mb-2">
+                        All LLM configurations, API keys, and system settings have been consolidated into the Admin Settings dashboard.
                       </p>
-                      <p className="text-xs text-yellow-700">
-                        Navigate to Settings → V1 Module LLM Assignment to configure primary and backup LLMs for each module.
+                      <p className="text-xs text-blue-700 mb-3">
+                        Access comprehensive settings for V1 modules, AI assistant, and system configuration through the admin panel.
                       </p>
+                      <div className="text-xs text-blue-600 space-y-1">
+                        <div>• LLM Module Configuration (Primary & Backup)</div>
+                        <div>• API Key Management</div>
+                        <div>• AI Assistant Settings</div>
+                        <div>• Global System Settings</div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -840,45 +840,46 @@ export default function UseCasesPage() {
                 <span>New Business Brief</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto modal-scroll">
               <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <DialogTitle>Business Brief</DialogTitle>
-                    <DialogDescription>
-                      NEW IDEA REQUEST BY Joshua Payne
-                    </DialogDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-lg border">
-                      <input
-                        type="checkbox"
-                        id="use-real-llm"
-                        checked={useRealLLM}
-                        onChange={(e) => setUseRealLLM(e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="use-real-llm" className="text-sm text-gray-700 font-medium">
-                        Use Real LLM
-                      </label>
-                      <div className="text-xs text-gray-500">
-                        {useRealLLM ? '🧠 AI Analysis' : '🎭 Mock Analysis'}
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={populateBadSampleData}
-                      className="bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-                    >
-                      <Lightbulb className="w-4 h-4 mr-1" />
-                      Load Test Data
-                    </Button>
+                <DialogTitle className="flex items-center gap-3">
+                  <FileText className="h-5 w-5" />
+                  Business Brief
+                </DialogTitle>
+                <DialogDescription>
+                  Submit your business idea for review
+                </DialogDescription>
+              </DialogHeader>
+              
+              {/* Controls moved below header */}
+              <div className="flex items-center justify-end space-x-2 pb-4 border-b">
+                <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-lg border">
+                  <input
+                    type="checkbox"
+                    id="use-real-llm"
+                    checked={useRealLLM}
+                    onChange={(e) => setUseRealLLM(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="use-real-llm" className="text-sm text-gray-700 font-medium">
+                    Use Real LLM
+                  </label>
+                  <div className="text-xs text-gray-500">
+                    {useRealLLM ? '🧠 AI Analysis' : '🎭 Mock Analysis'}
                   </div>
                 </div>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={populateBadSampleData}
+                  className="bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+                >
+                  <Lightbulb className="w-4 h-4 mr-1" />
+                  Load Test Data
+                </Button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-6 business-brief-form p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1267,7 +1268,7 @@ export default function UseCasesPage() {
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isAssessing}>
+                  <Button type="submit" disabled={isAssessing} className="bg-black text-white hover:bg-gray-800">
                     {isAssessing ? (
                       <>
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -1621,7 +1622,7 @@ export default function UseCasesPage() {
 
       {/* Quality Assessment Modal */}
       <Dialog open={isQualityAssessmentOpen} onOpenChange={setIsQualityAssessmentOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto modal-scroll">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               {qualityAssessment?.overallGrade === 'gold' && (
@@ -1662,7 +1663,7 @@ export default function UseCasesPage() {
           </DialogHeader>
 
           {qualityAssessment && (
-            <div className="space-y-6">
+            <div className="space-y-6 quality-assessment-results p-6">
               {/* Fallback Warning Card */}
               {qualityAssessment.assessmentMode === 'mock-fallback' && (
                 <Card className="border-l-4 border-l-amber-500 bg-amber-50">
@@ -1903,7 +1904,7 @@ export default function UseCasesPage() {
                     <div className="flex justify-center">
                       <Button
                         onClick={applyAcceptedSuggestions}
-                        className="bg-blue-600 hover:bg-blue-700 w-full"
+                        className="bg-black hover:bg-gray-800 text-white w-full"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Apply Selected Improvements
@@ -1915,7 +1916,7 @@ export default function UseCasesPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       onClick={handleManualImprovements}
-                      className="bg-orange-600 hover:bg-orange-700"
+                      className="bg-gray-500 hover:bg-gray-600 text-white"
                     >
                       <Edit3 className="w-4 h-4 mr-1" />
                       <span className="hidden sm:inline">Edit Manually</span>
@@ -1930,7 +1931,7 @@ export default function UseCasesPage() {
                         setAcceptedSuggestions({});
                         notify.success('Saved!', 'Business brief saved successfully.');
                       }}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-black hover:bg-gray-800 text-white"
                     >
                       <Save className="w-4 h-4 mr-1" />
                       Save

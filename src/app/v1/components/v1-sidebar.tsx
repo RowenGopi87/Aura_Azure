@@ -199,44 +199,6 @@ export function Version1Sidebar() {
                     </div>
                   )}
                   
-                  {/* Admin Links */}
-                  {primaryRole.includes('Administrator') && (
-                    <div className="space-y-1">
-                      <Link 
-                        href="/admin/audit"
-                        onClick={() => logAccessAttempt('admin', 'navigate', true)}
-                      >
-                        <Button
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start h-10 px-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50",
-                            sidebarCollapsed && "justify-center px-2",
-                            pathname === '/admin/audit' && "bg-purple-50 text-purple-700"
-                          )}
-                        >
-                          <Shield size={18} />
-                          {!sidebarCollapsed && <span className="ml-3 font-medium">Audit Dashboard</span>}
-                        </Button>
-                      </Link>
-                      
-                      <Link 
-                        href="/admin/users"
-                        onClick={() => logAccessAttempt('admin', 'navigate', true)}
-                      >
-                        <Button
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start h-10 px-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50",
-                            sidebarCollapsed && "justify-center px-2",
-                            pathname === '/admin/users' && "bg-purple-50 text-purple-700"
-                          )}
-                        >
-                          <Users size={18} />
-                          {!sidebarCollapsed && <span className="ml-3 font-medium">Manage Users</span>}
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
                 </>
               )}
               

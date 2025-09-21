@@ -1749,142 +1749,28 @@ export default function RequirementsPage() {
   // Initial load is handled by the main useEffect above
 
   return (
-    <div className="space-y-4">
+    <div className="container mx-auto p-6 space-y-6">
 
 
-      {/* Hidden Debug Menu */}
-      <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowDebugControls(!showDebugControls)}
-          className="text-gray-400 hover:text-gray-600"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
-      </div>
 
-      {/* Debug Controls Dropdown */}
-      {showDebugControls && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-gray-800">Debug Mode Controls</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDebugControls(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </Button>
-          </div>
-          <div className="space-y-2">
-            <label className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                checked={useMockLLM}
-                onChange={(e) => setUseMockLLM(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-sm text-gray-600">Use Mock LLM (no API costs)</span>
-            </label>
-            <label className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                checked={useMockData}
-                onChange={(e) => setUseMockData(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-sm text-gray-600">Use Mock Data (vs Database)</span>
-            </label>
-          </div>
-          <div className="text-xs text-gray-600 mb-3">
-            <div>📊 Data Status: Business Briefs: {useCases.length} | Initiatives: {initiatives.length} | Features: {features.length} | Epics: {epics.length} | Stories: {stories.length}</div>
-            <div>🔗 Business Brief Groups: {Object.keys(initiativesByBusinessBrief).length} groups</div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button 
-              onClick={() => {
-                if (window.confirm('Clear all features from store?')) {
-                  (window as any).clearAllFeatures();
-                  window.location.reload();
-                }
-              }}
-              className="px-3 py-1 bg-red-500 text-white rounded text-sm"
-            >
-              Clear Features
-            </button>
-            <button 
-              onClick={() => (window as any).debugFeatureDisplay()}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              Debug Display
-            </button>
-            <button 
-              onClick={() => {
-                console.log('🔍 Debug Business Brief Association...');
-                console.log('📊 Use Cases Store:', useCases.length, 'items');
-                useCases.forEach(uc => console.log(`  - UC ${uc.id}: "${uc.title}" (briefId: ${uc.businessBriefId})`));
-                console.log('📊 Initiatives Store:', initiatives.length, 'items');
-                initiatives.forEach(init => console.log(`  - Init ${init.id}: "${init.title}" (briefId: ${init.businessBriefId})`));
-                console.log('🔗 Business Brief Groups:', Object.keys(initiativesByBusinessBrief));
-                Object.values(initiativesByBusinessBrief).forEach(group => {
-                  console.log(`  - Group "${group.businessBriefTitle}" (${group.businessBriefId}): ${group.initiatives.length} initiatives`);
-                });
-              }}
-              className="px-3 py-1 bg-purple-500 text-white rounded text-sm"
-            >
-              Debug Associations
-            </button>
-            <button 
-              onClick={async () => {
-                if (window.confirm('🗑️ CLEAR DATABASE & POPULATE COMPLETE MOCK DATA?\n\nThis will:\n• Clear ALL existing business briefs, initiatives, features, epics, and stories\n• Populate with complete V1 mock data including Emirates scenario\n• Perfect for demo setup\n\nContinue?')) {
-                  try {
-                    console.log('🚀 Clearing database and populating with complete mock data...');
-                    
-                    // Call the migrate API to clear and populate all mock data  
-                    const response = await fetch('/api/migrate/mock-data', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' }
-                    });
-                    
-                    if (response.ok) {
-                      const result = await response.json();
-                      alert(`✅ Database cleared and populated successfully!\n\n📊 Added:\n• ${result.data.totalMigrated} total items\n• Complete Emirates booking hierarchy\n• All 4 business brief scenarios\n\nRefreshing page...`);
-                      window.location.reload();
-                    } else {
-                      const error = await response.json();
-                      alert('❌ Failed to populate data: ' + error.message);
-                    }
-                  } catch (error: any) {
-                    console.error('❌ Error populating demo data:', error);
-                    alert('❌ Error: ' + error.message);
-                  }
-                }
-              }}
-              className="px-3 py-1 bg-green-500 text-white rounded text-sm font-medium"
-            >
-              🗑️ Populate DB
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Header - Compact */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Work Items Management</h1>
-          <p className="text-gray-600 text-sm">Hierarchical breakdown: Initiative → Feature → Epic → Story</p>
-        </div>
+      {/* Glass Effect Container */}
+      <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg shadow-xl p-6 space-y-6">
         
-        <div className="flex items-center space-x-2">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center space-x-2" onClick={resetForm}>
-                <Plus size={16} />
-                <span>Manual Entry</span>
-              </Button>
-            </DialogTrigger>
+        {/* Header with Buttons */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Work Items Management</h1>
+            <p className="text-gray-600 mt-1">Hierarchical breakdown: Initiative → Feature → Epic → Story</p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center space-x-2" onClick={resetForm}>
+                  <Plus size={16} />
+                  <span>Manual Entry</span>
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
@@ -2009,24 +1895,24 @@ export default function RequirementsPage() {
             </DialogContent>
           </Dialog>
           
-          <Button 
-            variant="outline" 
-            className="flex items-center space-x-2"
-            onClick={() => setPortfolioMappingOpen(true)}
-          >
-            <Building2 size={16} />
-            <span>Portfolio Mapping</span>
-          </Button>
-          
-          <Button className="flex items-center space-x-2" disabled={Object.values(generatingItems).some(loading => loading)}>
-            <Sparkles size={16} />
-            <span>AI Generate</span>
-          </Button>
+            <Button 
+              variant="outline" 
+              className="flex items-center space-x-2"
+              onClick={() => setPortfolioMappingOpen(true)}
+            >
+              <Building2 size={16} />
+              <span>Portfolio Mapping</span>
+            </Button>
+            
+            <Button className="bg-black text-white hover:bg-gray-800 flex items-center space-x-2" disabled={Object.values(generatingItems).some(loading => loading)}>
+              <Sparkles size={16} />
+              <span>AI Generate</span>
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Filters - Compact */}
-      <div className="flex items-center space-x-3">
+        {/* Filters - Compact */}
+        <div className="flex items-center space-x-3">
         <div className="relative flex-1 max-w-sm">
           <Search size={14} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
@@ -2052,13 +1938,12 @@ export default function RequirementsPage() {
         </Select>
       </div>
 
-      {/* Summary Cards - Compact */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+        {/* Summary Cards - Condensed */}
+        <div className="bg-gray-200/60 backdrop-blur-sm border border-gray-300/40 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <CardTitle className="text-base">Work Item Summary</CardTitle>
-              <CardDescription className="text-sm">Overall work item metrics and progress</CardDescription>
+              <h3 className="text-base font-semibold text-gray-900">Work Item Summary</h3>
+              <p className="text-xs text-gray-600">Overall work item metrics and progress</p>
             </div>
             <Button
               variant="ghost"
@@ -2069,107 +1954,89 @@ export default function RequirementsPage() {
               {summaryCardsVisible ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </Button>
           </div>
-        </CardHeader>
-        {summaryCardsVisible && (
-          <CardContent className="pt-2">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Initiatives</p>
-                      <p className="text-2xl font-bold" style={{color: '#D4A843'}}>{totalInitiatives}</p>
-                    </div>
-                    <Target className="h-8 w-8" style={{color: '#D4A843'}} />
-                  </div>
-                </CardContent>
-              </Card>
+          
+          {summaryCardsVisible && (
+            <div className="grid grid-cols-6 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <Target className="h-6 w-6 mr-2" style={{color: '#D4A843'}} />
+                  <span className="text-2xl font-bold" style={{color: '#D4A843'}}>{totalInitiatives}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Total Initiatives</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Active</p>
-                      <p className="text-2xl font-bold text-blue-600">{activeInitiatives}</p>
-                    </div>
-                    <Clock className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <Clock className="h-6 w-6 text-blue-600 mr-2" />
+                  <span className="text-2xl font-bold text-blue-600">{activeInitiatives}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Active</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Completed</p>
-                      <p className="text-2xl font-bold text-green-600">{completedInitiatives}</p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <CheckCircle className="h-6 w-6 text-green-600 mr-2" />
+                  <span className="text-2xl font-bold text-green-600">{completedInitiatives}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Completed</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Features</p>
-                      <p className="text-2xl font-bold" style={{color: '#5B8DB8'}}>{totalFeatures}</p>
-                    </div>
-                    <Layers className="h-8 w-8" style={{color: '#5B8DB8'}} />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <Layers className="h-6 w-6 mr-2" style={{color: '#5B8DB8'}} />
+                  <span className="text-2xl font-bold" style={{color: '#5B8DB8'}}>{totalFeatures}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Features</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Epics</p>
-                      <p className="text-2xl font-bold" style={{color: '#8B7A9B'}}>{totalEpics}</p>
-                    </div>
-                    <BookOpen className="h-8 w-8" style={{color: '#8B7A9B'}} />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <BookOpen className="h-6 w-6 mr-2" style={{color: '#8B7A9B'}} />
+                  <span className="text-2xl font-bold" style={{color: '#8B7A9B'}}>{totalEpics}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Epics</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Stories</p>
-                      <p className="text-2xl font-bold" style={{color: '#7FB37C'}}>{totalStories}</p>
-                    </div>
-                    <FileText className="h-8 w-8" style={{color: '#7FB37C'}} />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <FileText className="h-6 w-6 mr-2" style={{color: '#7FB37C'}} />
+                  <span className="text-2xl font-bold" style={{color: '#7FB37C'}}>{totalStories}</span>
+                </div>
+                <p className="text-xs font-medium text-gray-600">Stories</p>
+              </div>
             </div>
-          </CardContent>
-        )}
-      </Card>
+          )}
+        </div>
 
-      {/* Enterprise-grade Work Items Table */}
-      <WorkItemsTable
-        initiatives={initiatives}
-        features={features}
-        epics={epics}
-        stories={stories}
-        portfolios={portfolios}
-        businessBriefs={useCases.map(uc => ({
-          id: uc.id,
-          title: uc.title,
-          businessBriefId: uc.businessBriefId || uc.id
-        }))}
-        onGenerateFeatures={handleGenerateFeatures}
-        onGenerateEpics={handleGenerateEpics}
-        onGenerateStories={handleGenerateStories}
-        onCreateInJira={handleCreateInJira}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        generatingItems={generatingItems}
-        creatingInJira={creatingInJira}
-      />
+        {/* Enterprise-grade Work Items Table */}
+        <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+          <div className="p-3 border-b border-gray-200/50">
+            <h3 className="text-base font-semibold text-gray-900">Work Items Hierarchy</h3>
+            <p className="text-xs text-gray-600">Initiative → Feature → Epic → Story breakdown</p>
+          </div>
+          <WorkItemsTable
+          initiatives={initiatives}
+          features={features}
+          epics={epics}
+          stories={stories}
+          portfolios={portfolios}
+          businessBriefs={useCases.map(uc => ({
+            id: uc.id,
+            title: uc.title,
+            businessBriefId: uc.businessBriefId || uc.id
+          }))}
+          onGenerateFeatures={handleGenerateFeatures}
+          onGenerateEpics={handleGenerateEpics}
+          onGenerateStories={handleGenerateStories}
+          onCreateInJira={handleCreateInJira}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          generatingItems={generatingItems}
+          creatingInJira={creatingInJira}
+        />
+        </div>
+        
+      </div>
 
       {businessBriefGroups.length === 0 && (
               <div className="text-center py-12">

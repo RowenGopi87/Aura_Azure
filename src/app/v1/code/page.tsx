@@ -370,7 +370,7 @@ function CodePageComponent() {
 
     return (
       <React.Fragment key={item.id}>
-        <div className={`group flex items-center gap-2 ${paddingClass} py-2 hover:bg-gray-50 border-b border-gray-100 cursor-pointer`}>
+        <div className={`group flex items-center gap-2 ${paddingClass} py-2 bg-gray-200/30 hover:bg-gray-200/50 border-b border-gray-300/30 cursor-pointer`}>
           {/* Expand/Collapse Button */}
           <button 
             className="w-4 h-4 flex items-center justify-center"
@@ -2155,22 +2155,23 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
 
   return (
     <div className={`container mx-auto p-6 space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-white overflow-auto' : ''}`}>
-
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Code Repository</h1>
-          <p className="text-gray-600 text-sm">Generate production-ready code from work items using AI</p>
-        </div>
-        <div className="flex items-center space-x-2">
+      
+      {/* Glass Effect Container */}
+      <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg shadow-xl p-6 space-y-6">
+        
+        {/* Header with Badge */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Code Repository</h1>
+            <p className="text-gray-600 mt-1">Generate production-ready code from work items using AI</p>
+          </div>
           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
             <Code2 className="w-4 h-4 mr-1" />
             Development Phase
           </Badge>
         </div>
-      </div>
 
-      {/* Main Tab Navigation */}
+        {/* Main Tab Navigation */}
       <Tabs defaultValue="code-generation" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="code-generation" className="flex items-center">
@@ -2236,10 +2237,15 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
                   </div>
                   
                   {/* Hierarchical Table - Exact V1 Design Style */}
-                <Card>
-                    <CardContent className="p-0">
+                  <div className="bg-gray-200/50 backdrop-blur-sm border-0 rounded-lg">
+                    <div className="p-3 border-b border-gray-200/50">
+                      <h3 className="text-base font-semibold text-gray-900">Work Items Hierarchy</h3>
+                      <p className="text-xs text-gray-600">Select a work item to generate code</p>
+                    </div>
+                    <Card className="border-0 rounded-none">
+                      <CardContent className="p-0">
                       {/* Table Header */}
-                      <div className="flex items-center px-2 py-2 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700 sticky top-0 z-10">
+                      <div className="flex items-center px-2 py-2 bg-gray-200/40 border-b border-gray-300/40 text-sm font-medium text-gray-700 sticky top-0 z-10">
                         <div className="w-6"></div> {/* Expand column */}
                         <div className="flex-1 min-w-0">Work Item</div>
                         <div className="w-20 text-center">Priority</div>
@@ -2253,7 +2259,7 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
                         <React.Fragment key={portfolioId}>
                           {/* Portfolio Header */}
                           <div 
-                            className="flex items-center gap-3 px-3 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 cursor-pointer"
+                            className="flex items-center gap-3 px-3 py-3 bg-gray-200/40 border-b border-gray-300/40 cursor-pointer"
                             onClick={() => toggleExpanded(`portfolio-${portfolioId}`)}
                           >
                             <button>
@@ -2283,7 +2289,7 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
                               <React.Fragment key={businessBriefId}>
                                 {/* Business Brief Header */}
                                 <div 
-                                  className="flex items-center gap-3 px-6 py-2 bg-amber-50 border-b border-gray-100 cursor-pointer"
+                                  className="flex items-center gap-3 px-6 py-2 bg-gray-200/35 border-b border-gray-300/35 cursor-pointer"
                                   onClick={() => toggleExpanded(`brief-${businessBriefId}`)}
                                 >
                                   <button>
@@ -2318,8 +2324,9 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
                         </React.Fragment>
                       ))}
                       </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               )}
 
@@ -2494,7 +2501,7 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
                     <Button
                       onClick={generateCode}
                           disabled={isGenerating || !selectedWorkItemForCode}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          className="w-full bg-black hover:bg-gray-800 text-white"
                       size="lg"
                     >
                       {isGenerating ? (
@@ -2808,7 +2815,7 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
                             <Button
                       onClick={generateCode}
                       disabled={isGenerating || (!figmaUrl && !designFile)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      className="w-full bg-black hover:bg-gray-800 text-white"
                       size="lg"
                     >
                       {isGenerating ? (
@@ -3347,16 +3354,18 @@ export default ${workItem?.title.replace(/\\s+/g, '')}Component;`;
         </TabsContent>
       </Tabs>
 
-      {/* Help Section */}
-      {!isFullscreen && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Pro Tips:</strong> Upload design files for visual context, choose your preferred language and framework, or let AI auto-select the best options. 
-            Use the "Review with AI" feature to get code improvement suggestions after generation. Use reverse engineering to extract work items from existing codebases.
-          </AlertDescription>
-        </Alert>
-      )}
+        {/* Help Section */}
+        {!isFullscreen && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Pro Tips:</strong> Upload design files for visual context, choose your preferred language and framework, or let AI auto-select the best options. 
+              Use the "Review with AI" feature to get code improvement suggestions after generation. Use reverse engineering to extract work items from existing codebases.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+      </div>
     </div>
   );
 }

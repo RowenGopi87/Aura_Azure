@@ -33,10 +33,14 @@ export interface ReverseEngineeringLLMSettings {
   design: {
     provider: string;
     model: string;
+    backupProvider?: string;
+    backupModel?: string;
   };
   code: {
     provider: string;
     model: string;
+    backupProvider?: string;
+    backupModel?: string;
   };
 }
 
@@ -101,6 +105,7 @@ interface SettingsStore {
   
   // Reverse Engineering LLM Settings
   setReverseEngineeringLLM: (type: 'design' | 'code', provider: string, model: string) => void;
+  setReverseEngineeringBackupLLM: (type: 'design' | 'code', provider: string, model: string) => void;
   resetReverseEngineeringLLMSettings: () => void;
   
   // ARRIVE Settings Actions
@@ -462,8 +467,22 @@ export const useSettingsStore = create<SettingsStore>()(
           reverseEngineeringLLMSettings: {
             ...state.reverseEngineeringLLMSettings,
             [type]: {
+              ...state.reverseEngineeringLLMSettings[type],
               provider,
               model
+            }
+          }
+        }));
+      },
+
+      setReverseEngineeringBackupLLM: (type: 'design' | 'code', provider: string, model: string) => {
+        set((state) => ({
+          reverseEngineeringLLMSettings: {
+            ...state.reverseEngineeringLLMSettings,
+            [type]: {
+              ...state.reverseEngineeringLLMSettings[type],
+              backupProvider: provider,
+              backupModel: model
             }
           }
         }));
