@@ -1,0 +1,76 @@
+# Aura SDLC MariaDB Database Container
+# GUARANTEED automatic initialization for Azure deployment
+
+FROM mariadb:11.8
+
+# Set environment variables
+ENV MYSQL_ROOT_PASSWORD=aura_root_password_123
+ENV MYSQL_DATABASE=aura_playground
+ENV MYSQL_USER=aura_user
+ENV MYSQL_PASSWORD=aura_password_123
+
+# Copy database configuration
+COPY config/database/my.ini /etc/mysql/conf.d/custom.cnf
+
+# Copy the complete database creation script
+COPY scripts/create-complete-aura-database.sql /docker-entrypoint-initdb.d/00-create-complete-aura-database.sql
+
+# Create a custom entrypoint that ALWAYS runs our initialization
+COPY <<EOF /custom-entrypoint.sh
+#!/bin/bash
+set -e
+
+echo "=== Aura Custom Database Initialization ==="
+
+# Start the original MariaDB entrypoint in background
+/usr/local/bin/docker-entrypoint.sh mysqld &
+MARIADB_PID=\$!
+
+# Wait for MariaDB to be ready
+echo "Waiting for MariaDB to start..."
+while ! mariadb-admin ping -h localhost -u root -p\$MYSQL_ROOT_PASSWORD --silent; do
+    echo "MariaDB not ready yet, waiting..."
+    sleep 2
+done
+
+echo "MariaDB is ready, checking if Aura database exists..."
+
+# Check if our database is properly initialized
+DB_EXISTS=\$(mariadb -u root -p\$MYSQL_ROOT_PASSWORD -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '\$MYSQL_DATABASE';" -s -N)
+
+if [ "\$DB_EXISTS" -lt "30" ]; then
+    echo "Aura database not fully initialized, running setup..."
+    mariadb -u root -p\$MYSQL_ROOT_PASSWORD < /docker-entrypoint-initdb.d/00-create-complete-aura-database.sql
+    echo "Aura database initialization completed!"
+else
+    echo "Aura database already initialized with \$DB_EXISTS tables"
+fi
+
+# Verify final state
+FINAL_COUNT=\$(mariadb -u root -p\$MYSQL_ROOT_PASSWORD -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '\$MYSQL_DATABASE';" -s -N)
+echo "Final table count: \$FINAL_COUNT"
+
+if [ "\$FINAL_COUNT" -ge "30" ]; then
+    echo "✅ Aura database ready for Azure deployment!"
+else
+    echo "❌ Database initialization incomplete"
+    exit 1
+fi
+
+# Keep MariaDB running
+wait \$MARIADB_PID
+EOF
+
+RUN chmod +x /custom-entrypoint.sh
+
+# Expose MariaDB port
+EXPOSE 3306
+
+# Enhanced health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
+  CMD mariadb-admin ping -h localhost -u \$MYSQL_USER -p\$MYSQL_PASSWORD && \
+      mariadb -u \$MYSQL_USER -p\$MYSQL_PASSWORD \$MYSQL_DATABASE -e "SELECT COUNT(*) FROM business_briefs;" && \
+      mariadb -u \$MYSQL_USER -p\$MYSQL_PASSWORD \$MYSQL_DATABASE -e "SELECT COUNT(*) FROM users;" || exit 1
+
+# Use our custom entrypoint that guarantees initialization
+ENTRYPOINT ["/custom-entrypoint.sh"]

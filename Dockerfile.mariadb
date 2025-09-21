@@ -1,0 +1,26 @@
+# Aura SDLC MariaDB Database Container
+# Automatic initialization using standard MariaDB approach
+
+FROM mariadb:11.8
+
+# Set environment variables
+ENV MYSQL_ROOT_PASSWORD=aura_root_password_123
+ENV MYSQL_DATABASE=aura_playground
+ENV MYSQL_USER=aura_user
+ENV MYSQL_PASSWORD=aura_password_123
+
+# Copy database configuration (without skip-grant-tables)
+COPY config/database/my.ini /etc/mysql/conf.d/custom.cnf
+
+# Copy the complete database creation script as the FIRST script to run
+COPY scripts/create-complete-aura-database.sql /docker-entrypoint-initdb.d/00-create-complete-aura-database.sql
+
+# Expose MariaDB port
+EXPOSE 3306
+
+# Health check that waits for complete initialization
+HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=10 \
+  CMD mariadb-admin ping -h localhost -u $MYSQL_USER -p$MYSQL_PASSWORD && \
+      mariadb -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE -e "SELECT COUNT(*) FROM business_briefs;" > /dev/null 2>&1 || exit 1
+
+# Use the standard MariaDB entrypoint (will run our script automatically on fresh database)

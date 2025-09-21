@@ -1,0 +1,131 @@
+# Aura SDLC Local Docker Testing Configuration
+# Use this for Stage 2: Local Docker Testing
+
+version: '3.8'
+
+services:
+  # MariaDB Database Service
+  aura-database:
+    build:
+      context: .
+      dockerfile: Dockerfile.mariadb
+    container_name: aura-database
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: aura_root_password_123
+      MYSQL_DATABASE: aura_playground
+      MYSQL_USER: aura_user
+      MYSQL_PASSWORD: aura_password_123
+      # Force initialization
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    ports:
+      - "3306:3306"
+    volumes:
+      # Use temporary volume for testing (will be recreated each time)
+      - aura-db-data:/var/lib/mysql
+      # Custom configuration
+      - ./config/database/my.ini:/etc/mysql/conf.d/custom.cnf:ro
+    networks:
+      - aura-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "aura_user", "-paura_password_123"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # MCP Services (Python MCP + Playwright)
+  aura-mcp-services:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp-services
+    container_name: aura-mcp-services
+    restart: unless-stopped
+    environment:
+      # MCP Configuration
+      MCP_BRIDGE_PORT: 8000
+      PLAYWRIGHT_MCP_PORT: 8931
+      PLAYWRIGHT_HEADLESS: "true"
+      
+      # Display configuration for headless browser
+      DISPLAY: ":99"
+      
+      # Python configuration
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"   # Python MCP Server
+      - "8931:8931"   # Playwright MCP Server
+      - "8932:8932"   # Reserved for future Jira MCP
+    volumes:
+      # Screenshots and test artifacts
+      - ./mcp/screenshots:/app/screenshots
+      # MCP configuration
+      - ./mcp/.env:/app/.env:ro
+    networks:
+      - aura-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      - aura-database
+
+  # Aura Application (Next.js)
+  aura-application:
+    build:
+      context: .
+      dockerfile: Dockerfile.aura-app.dev
+    container_name: aura-application
+    restart: unless-stopped
+    environment:
+      # Application configuration
+      NODE_ENV: development
+      PORT: 3000
+      
+      # Database configuration
+      AURA_DB_HOST: aura-database
+      AURA_DB_PORT: 3306
+      AURA_DB_USER: aura_user
+      AURA_DB_PASSWORD: aura_password_123
+      AURA_DB_NAME: aura_playground
+      AURA_DB_SSL: "false"
+      
+      # MCP configuration
+      MCP_BRIDGE_URL: http://aura-mcp-services:8000
+      PLAYWRIGHT_MCP_URL: http://aura-mcp-services:8931
+      
+      # LLM API configuration (from environment or defaults)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      
+      # Application URLs
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    networks:
+      - aura-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/database/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - aura-database
+      - aura-mcp-services
+
+# Networks
+networks:
+  aura-network:
+    driver: bridge
+    name: aura-network
+
+# Volumes
+volumes:
+  aura-db-data:
+    driver: local
+    name: aura-db-data

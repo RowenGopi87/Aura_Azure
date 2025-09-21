@@ -1,0 +1,662 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SimpleToggle } from "@/components/ui/simple-toggle";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Settings,
+  Shield,
+  Database,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Save,
+  RotateCcw,
+  Trash2,
+  Download,
+  Upload,
+  Activity,
+  Eye,
+  Brain,
+  Zap
+} from "lucide-react";
+import { useAuthStore } from "@/store/auth-store";
+
+interface AuditConfig {
+  auditEnabled: boolean;
+  logLevel: 'basic' | 'detailed' | 'verbose';
+  retentionDays: number;
+  asyncLogging: boolean;
+  trackContentChanges: boolean;
+  trackPromptAnalytics: boolean;
+  performanceMonitoring: boolean;
+  exportTracking: boolean;
+  batchSize: number;
+  flushInterval: number;
+}
+
+interface FeatureToggle {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  enabled: boolean;
+  impactLevel: 'low' | 'medium' | 'high';
+}
+
+export default function AuditSettingsPage() {
+  const { user } = useAuthStore();
+  const [config, setConfig] = useState<AuditConfig>({
+    auditEnabled: true,
+    logLevel: 'detailed',
+    retentionDays: 730,
+    asyncLogging: true,
+    trackContentChanges: true,
+    trackPromptAnalytics: true,
+    performanceMonitoring: true,
+    exportTracking: true,
+    batchSize: 10,
+    flushInterval: 5000
+  });
+  
+  const [featureToggles, setFeatureToggles] = useState<FeatureToggle[]>([
+    {
+      id: 'brief_generation',
+      name: 'Business Brief Generation',
+      description: 'Track generation and editing of business briefs',
+      category: 'Generation',
+      enabled: true,
+      impactLevel: 'high'
+    },
+    {
+      id: 'initiative_creation',
+      name: 'Initiative Creation',
+      description: 'Track creation of initiatives from briefs',
+      category: 'Generation',
+      enabled: true,
+      impactLevel: 'high'
+    },
+    {
+      id: 'feature_generation',
+      name: 'Feature Generation',
+      description: 'Track generation of features from initiatives',
+      category: 'Generation',
+      enabled: true,
+      impactLevel: 'high'
+    },
+    {
+      id: 'epic_generation',
+      name: 'Epic Generation',
+      description: 'Track generation of epics from features',
+      category: 'Generation',
+      enabled: true,
+      impactLevel: 'high'
+    },
+    {
+      id: 'story_creation',
+      name: 'Story Creation',
+      description: 'Track creation of stories from epics',
+      category: 'Generation',
+      enabled: true,
+      impactLevel: 'high'
+    },
+    {
+      id: 'code_generation',
+      name: 'Code Generation',
+      description: 'Track code generation and reverse engineering',
+      category: 'Code',
+      enabled: true,
+      impactLevel: 'medium'
+    },
+    {
+      id: 'design_generation',
+      name: 'Design Generation',
+      description: 'Track design artifact creation and reverse engineering',
+      category: 'Design',
+      enabled: true,
+      impactLevel: 'medium'
+    },
+    {
+      id: 'test_generation',
+      name: 'Test Case Generation',
+      description: 'Track test case generation and MCP execution',
+      category: 'Testing',
+      enabled: true,
+      impactLevel: 'medium'
+    },
+    {
+      id: 'jira_integration',
+      name: 'Jira Integration Tracking',
+      description: 'Track exports and integrations with Jira',
+      category: 'Integration',
+      enabled: true,
+      impactLevel: 'high'
+    },
+    {
+      id: 'ai_enhancements',
+      name: 'AI Enhancement Tracking',
+      description: 'Track AI-powered content enhancements',
+      category: 'AI',
+      enabled: true,
+      impactLevel: 'medium'
+    }
+  ]);
+
+  const [loading, setLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = user?.roles?.includes('system_administrator') || user?.roles?.includes('admin');
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadAuditConfig();
+    }
+  }, [isAdmin]);
+
+  const loadAuditConfig = async () => {
+    try {
+      // Mock API call - replace with actual API
+      // const response = await fetch('/api/audit/config');
+      // const data = await response.json();
+      // setConfig(data.config);
+      // setFeatureToggles(data.featureToggles);
+    } catch (error) {
+      console.error('Failed to load audit config:', error);
+    }
+  };
+
+  const handleConfigChange = (key: keyof AuditConfig, value: any) => {
+    setConfig(prev => ({
+      ...prev,
+      [key]: value
+    }));
+    setHasChanges(true);
+  };
+
+  const handleFeatureToggle = (featureId: string, enabled: boolean) => {
+    setFeatureToggles(prev => 
+      prev.map(feature => 
+        feature.id === featureId 
+          ? { ...feature, enabled }
+          : feature
+      )
+    );
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      // Mock API call - replace with actual API
+      // await fetch('/api/audit/config', {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ config, featureToggles })
+      // });
+      
+      console.log('Audit configuration saved:', { config, featureToggles });
+      setHasChanges(false);
+      alert('Audit settings saved successfully!');
+    } catch (error) {
+      console.error('Failed to save audit config:', error);
+      alert('Failed to save audit settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset all audit settings to defaults?')) {
+      setConfig({
+        auditEnabled: true,
+        logLevel: 'detailed',
+        retentionDays: 730,
+        asyncLogging: true,
+        trackContentChanges: true,
+        trackPromptAnalytics: true,
+        performanceMonitoring: true,
+        exportTracking: true,
+        batchSize: 10,
+        flushInterval: 5000
+      });
+      setHasChanges(true);
+    }
+  };
+
+  const handleExportConfig = () => {
+    const exportData = { config, featureToggles };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-config-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target?.result as string);
+          if (importedData.config && importedData.featureToggles) {
+            setConfig(importedData.config);
+            setFeatureToggles(importedData.featureToggles);
+            setHasChanges(true);
+            alert('Configuration imported successfully!');
+          } else {
+            alert('Invalid configuration file format');
+          }
+        } catch (error) {
+          alert('Failed to parse configuration file');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You need administrator privileges to configure audit settings.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1>Audit Settings - Temporarily Simplified</h1>
+    </div>
+  );
+  
+  /* ORIGINAL CONTENT - TEMPORARILY COMMENTED
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Audit Settings</h1>
+          <p className="text-gray-600">Configure audit system behavior and feature tracking</p>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {hasChanges && (
+            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+              Unsaved Changes
+            </Badge>
+          )}
+          
+          <Button variant="outline" size="sm" onClick={handleExportConfig}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Config
+          </Button>
+          
+          <div className="relative">
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImportConfig}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <Button variant="outline" size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Import Config
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Tabs defaultValue="general" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="features">Feature Tracking</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="data">Data Management</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>Core Audit Settings</span>
+              </CardTitle>
+              <CardDescription>
+                Configure the fundamental behavior of the audit system
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Master Toggle */}
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
+                <div>
+                  <Label className="text-base font-medium">Enable Audit System</Label>
+                  <p className="text-sm text-gray-600">Master switch for all audit tracking</p>
+                </div>
+                <SimpleToggle
+                  checked={config.auditEnabled}
+                  onCheckedChange={(checked) => handleConfigChange('auditEnabled', checked)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="logLevel">Logging Level</Label>
+                  <Select
+                    value={config.logLevel}
+                    onValueChange={(value) => handleConfigChange('logLevel', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic - Essential events only</SelectItem>
+                      <SelectItem value="detailed">Detailed - Comprehensive tracking</SelectItem>
+                      <SelectItem value="verbose">Verbose - Maximum detail</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="retentionDays">Data Retention (Days)</Label>
+                  <Input
+                    id="retentionDays"
+                    type="number"
+                    value={config.retentionDays}
+                    onChange={(e) => handleConfigChange('retentionDays', parseInt(e.target.value))}
+                    min="30"
+                    max="2555"
+                  />
+                  <p className="text-xs text-gray-500">Current: {config.retentionDays} days (2 years)</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label className="font-medium">Asynchronous Logging</Label>
+                    <p className="text-sm text-gray-600">Better performance, slight delay</p>
+                  </div>
+                  <SimpleToggle
+                    checked={config.asyncLogging}
+                    onCheckedChange={(checked) => handleConfigChange('asyncLogging', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label className="font-medium">Track Content Changes</Label>
+                    <p className="text-sm text-gray-600">Detailed edit tracking</p>
+                  </div>
+                  <SimpleToggle
+                    checked={config.trackContentChanges}
+                    onCheckedChange={(checked) => handleConfigChange('trackContentChanges', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label className="font-medium">Prompt Analytics</Label>
+                    <p className="text-sm text-gray-600">Track keywords and patterns</p>
+                  </div>
+                  <SimpleToggle
+                    checked={config.trackPromptAnalytics}
+                    onCheckedChange={(checked) => handleConfigChange('trackPromptAnalytics', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label className="font-medium">Performance Monitoring</Label>
+                    <p className="text-sm text-gray-600">Track generation times</p>
+                  </div>
+                  <SimpleToggle
+                    checked={config.performanceMonitoring}
+                    onCheckedChange={(checked) => handleConfigChange('performanceMonitoring', checked)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="features" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Activity className="h-5 w-5" />
+                <span>Feature Tracking Controls</span>
+              </CardTitle>
+              <CardDescription>
+                Enable or disable tracking for specific features and activities
+              </CardDescription>
+            </CardContent>
+            <CardContent>
+              <div className="space-y-4">
+                {['Generation', 'Code', 'Design', 'Testing', 'Integration', 'AI'].map(category => (
+                  <div key={category}>
+                    <h3 className="text-lg font-medium mb-3 flex items-center space-x-2">
+                      {category === 'Generation' && <Brain className="h-5 w-5 text-purple-600" />}
+                      {category === 'Code' && <Activity className="h-5 w-5 text-blue-600" />}
+                      {category === 'Design' && <Eye className="h-5 w-5 text-green-600" />}
+                      {category === 'Testing' && <CheckCircle className="h-5 w-5 text-orange-600" />}
+                      {category === 'Integration' && <Zap className="h-5 w-5 text-red-600" />}
+                      {category === 'AI' && <Brain className="h-5 w-5 text-indigo-600" />}
+                      <span>{category}</span>
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      {featureToggles
+                        .filter(feature => feature.category === category)
+                        .map(feature => (
+                          <div key={feature.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <Label className="font-medium">{feature.name}</Label>
+                                <Badge 
+                                  variant="outline" 
+                                  className={
+                                    feature.impactLevel === 'high' 
+                                      ? 'bg-red-50 text-red-700 border-red-200'
+                                      : feature.impactLevel === 'medium'
+                                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                      : 'bg-green-50 text-green-700 border-green-200'
+                                  }
+                                >
+                                  {feature.impactLevel} impact
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">{feature.description}</p>
+                            </div>
+                            <SimpleToggle
+                              checked={feature.enabled}
+                              onCheckedChange={(checked) => handleFeatureToggle(feature.id, checked)}
+                            />
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Clock className="h-5 w-5" />
+                <span>Performance Settings</span>
+              </CardTitle>
+              <CardDescription>
+                Configure batch processing and performance optimization
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="batchSize">Batch Size</Label>
+                  <Input
+                    id="batchSize"
+                    type="number"
+                    value={config.batchSize}
+                    onChange={(e) => handleConfigChange('batchSize', parseInt(e.target.value))}
+                    min="1"
+                    max="100"
+                  />
+                  <p className="text-xs text-gray-500">Events per batch (1-100)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="flushInterval">Flush Interval (ms)</Label>
+                  <Input
+                    id="flushInterval"
+                    type="number"
+                    value={config.flushInterval}
+                    onChange={(e) => handleConfigChange('flushInterval', parseInt(e.target.value))}
+                    min="1000"
+                    max="60000"
+                  />
+                  <p className="text-xs text-gray-500">How often to send batches (1-60 seconds)</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-blue-900">Performance Impact</h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Lower batch sizes and flush intervals provide more real-time data but may impact performance.
+                      Higher values improve performance but delay data availability.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="data" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Database className="h-5 w-5" />
+                <span>Data Management</span>
+              </CardTitle>
+              <CardDescription>
+                Manage audit data storage and cleanup policies
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <Database className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-600">2.3 GB</div>
+                    <p className="text-sm text-gray-600">Current Storage</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <Activity className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-600">1.2M</div>
+                    <p className="text-sm text-gray-600">Total Events</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-orange-600">730</div>
+                    <p className="text-sm text-gray-600">Days Retained</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-4">
+                <Button variant="outline" className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export All Audit Data
+                </Button>
+                
+                <Button variant="outline" className="w-full" disabled>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Cleanup Old Data (Auto-managed)
+                </Button>
+              </div>
+
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-yellow-900">Data Retention Policy</h4>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Audit data older than {config.retentionDays} days will be automatically archived and removed 
+                      from active storage. Archived data can be restored if needed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Footer Actions */}
+      <div className="flex items-center justify-between p-6 border-t bg-gray-50 rounded-lg">
+        <div className="flex items-center space-x-2">
+          {config.auditEnabled ? (
+            <div className="flex items-center space-x-2 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm">Audit system is enabled</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Audit system is disabled</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" onClick={handleReset}>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset to Defaults
+          </Button>
+          
+          <Button 
+            onClick={handleSave} 
+            disabled={loading || !hasChanges}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {loading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
+            Save Settings
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+  */
+}

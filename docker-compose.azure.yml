@@ -1,0 +1,143 @@
+# Aura SDLC Azure Deployment Configuration
+# Use this as reference for Azure Container deployment
+
+version: '3.8'
+
+services:
+  # MariaDB Database Service (for Azure Container Instances)
+  aura-database:
+    image: ${AZURE_CONTAINER_REGISTRY}/aura-database:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: aura_playground
+      MYSQL_USER: aura_user
+      MYSQL_PASSWORD: ${DB_USER_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      # Azure persistent storage
+      - aura-db-azure-data:/var/lib/mysql
+    networks:
+      - aura-azure-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # MCP Services (for Azure App Service)
+  aura-mcp-services:
+    image: ${AZURE_CONTAINER_REGISTRY}/aura-mcp-services:latest
+    restart: unless-stopped
+    environment:
+      # MCP Configuration
+      MCP_BRIDGE_PORT: 8000
+      PLAYWRIGHT_MCP_PORT: 8931
+      PLAYWRIGHT_HEADLESS: "true"
+      
+      # Azure-specific configuration
+      WEBSITE_SITE_NAME: ${AZURE_MCP_APP_NAME}
+      
+      # LLM API Keys from Azure Key Vault
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      
+      # Jira configuration
+      JIRA_CLOUD_ID: ${JIRA_CLOUD_ID}
+      
+      # Display configuration
+      DISPLAY: ":99"
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+      - "8931:8931"
+      - "8932:8932"
+    networks:
+      - aura-azure-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    depends_on:
+      - aura-database
+
+  # Aura Application (for Azure App Service)
+  aura-application:
+    image: ${AZURE_CONTAINER_REGISTRY}/aura-application:latest
+    restart: unless-stopped
+    environment:
+      # Application configuration
+      NODE_ENV: production
+      PORT: 3000
+      
+      # Azure-specific configuration
+      WEBSITE_SITE_NAME: ${AZURE_APP_NAME}
+      
+      # Database configuration (Azure internal networking)
+      AURA_DB_HOST: aura-database
+      AURA_DB_PORT: 3306
+      AURA_DB_USER: aura_user
+      AURA_DB_PASSWORD: ${DB_USER_PASSWORD}
+      AURA_DB_NAME: aura_playground
+      AURA_DB_SSL: "false"
+      
+      # MCP configuration (Azure internal networking)
+      MCP_BRIDGE_URL: http://aura-mcp-services:8000
+      PLAYWRIGHT_MCP_URL: http://aura-mcp-services:8931
+      
+      # LLM API configuration from Azure Key Vault
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      
+      # Application URLs (Azure App Service URLs)
+      NEXT_PUBLIC_APP_URL: https://${AZURE_APP_NAME}.azurewebsites.net
+      NEXTAUTH_URL: https://${AZURE_APP_NAME}.azurewebsites.net
+    ports:
+      - "3000:3000"
+    networks:
+      - aura-azure-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - aura-database
+      - aura-mcp-services
+
+# Azure Virtual Network
+networks:
+  aura-azure-network:
+    driver: bridge
+    name: aura-azure-network
+
+# Azure Persistent Storage
+volumes:
+  aura-db-azure-data:
+    driver: local
+    name: aura-db-azure-data
+
+# Azure deployment configuration
+# These environment variables will be set by the deployment script:
+# - AZURE_CONTAINER_REGISTRY: aura1devtestbeacrmaen.azurecr.io
+# - AZURE_APP_NAME: aura1-devtest-fe-app-maen
+# - AZURE_MCP_APP_NAME: aura1-devtest-be-asp-maen
+# - DB_ROOT_PASSWORD: From Azure Key Vault
+# - DB_USER_PASSWORD: From Azure Key Vault
+# - OPENAI_API_KEY: From Azure Key Vault
+# - GOOGLE_API_KEY: From Azure Key Vault
+# - ANTHROPIC_API_KEY: From Azure Key Vault
+# - JIRA_CLOUD_ID: From Azure Key Vault
