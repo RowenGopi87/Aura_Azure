@@ -1186,6 +1186,7 @@ export default function Version1IdeasPage() {
       const primaryLLMSettings = getV1ModuleLLM('use-cases', 'primary');
       console.log(`🔍 Trying primary LLM for ${moduleName}:`, primaryLLMSettings.provider, primaryLLMSettings.model);
 
+      // 🔒 SECURITY: Send config only, API key retrieved server-side
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -1193,7 +1194,13 @@ export default function Version1IdeasPage() {
         },
         body: JSON.stringify({
           ...requestData,
-          llmSettings: primaryLLMSettings,
+          llmConfig: {
+            provider: primaryLLMSettings.provider,
+            model: primaryLLMSettings.model,
+            temperature: primaryLLMSettings.temperature,
+            maxTokens: primaryLLMSettings.maxTokens
+            // 🔒 NO API KEY - Retrieved server-side
+          },
           llmSource: 'primary'
         }),
       });
@@ -1216,6 +1223,7 @@ export default function Version1IdeasPage() {
         const backupLLMSettings = getV1ModuleLLM('use-cases', 'backup');
         console.log(`🔄 Falling back to backup LLM for ${moduleName}:`, backupLLMSettings.provider, backupLLMSettings.model);
 
+        // 🔒 SECURITY: Send config only, API key retrieved server-side
         const response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
@@ -1223,7 +1231,13 @@ export default function Version1IdeasPage() {
           },
           body: JSON.stringify({
             ...requestData,
-            llmSettings: backupLLMSettings,
+            llmConfig: {
+              provider: backupLLMSettings.provider,
+              model: backupLLMSettings.model,
+              temperature: backupLLMSettings.temperature,
+              maxTokens: backupLLMSettings.maxTokens
+              // 🔒 NO API KEY - Retrieved server-side
+            },
             llmSource: 'backup'
           }),
         });

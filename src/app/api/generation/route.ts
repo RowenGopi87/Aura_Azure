@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { LLMService } from '@/lib/services/llm-service';
 import { createConnection } from '@/lib/database';
 import { auditService } from '@/lib/audit/audit-service';
+import { secretsManager, LLMProvider } from '@/lib/secrets/secrets-manager';
 
 const generationRequestSchema = z.object({
   parentType: z.enum(['Initiative', 'Feature', 'Epic', 'BusinessBrief']),
@@ -11,10 +12,10 @@ const generationRequestSchema = z.object({
   quantity: z.number().min(1).max(15),
   additionalContext: z.string().optional(),
   pageSource: z.enum(['business-brief', 'work-items']),
-  llmSettings: z.object({
+  llmConfig: z.object({
     provider: z.string(),
     model: z.string(),
-    apiKey: z.string(),
+    temperature: z.number().optional(),
     maxTokens: z.number().optional(),
   })
 });
@@ -33,10 +34,28 @@ export async function POST(request: NextRequest) {
       quantity, 
       additionalContext, 
       pageSource, 
-      llmSettings 
+      llmConfig 
     } = validatedData;
 
-    console.log('🎯 Generation request:', { parentType, parentId, targetType, quantity, pageSource });
+    console.log('🎯 Generation request:', { parentType, parentId, targetType, quantity, pageSource, provider: llmConfig.provider });
+
+    // 🔒 SECURITY: Get API key from server-side secrets manager (never from client)
+    const apiKey = await secretsManager.getApiKey(llmConfig.provider as LLMProvider);
+    
+    if (!apiKey) {
+      throw new Error(`${llmConfig.provider} is not configured. Please set the API key in environment variables.`);
+    }
+
+    // Build complete LLM settings with server-side key
+    const llmSettings = {
+      provider: llmConfig.provider,
+      model: llmConfig.model,
+      apiKey, // 🔒 Retrieved server-side only
+      temperature: llmConfig.temperature || 0.7,
+      maxTokens: llmConfig.maxTokens || 4000
+    };
+
+    console.log('🔐 Using server-side API key for:', llmConfig.provider, '(key never exposed to client)');
 
     
     // Get parent data for context

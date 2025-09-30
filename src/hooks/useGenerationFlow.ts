@@ -83,6 +83,7 @@ export function useGenerationFlow({ onSuccess, onError, onGenerationStart, onGen
       const settings = getV1ModuleLLM(moduleName, 'primary');
 
       // Call generation API
+      // 🔒 SECURITY: Only send provider/model config, API key retrieved server-side
       const response = await fetch('/api/generation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -93,7 +94,13 @@ export function useGenerationFlow({ onSuccess, onError, onGenerationStart, onGen
           quantity: prompt.quantity,
           additionalContext: prompt.additionalContext,
           pageSource: activeSession.request.pageSource,
-          llmSettings: settings
+          llmConfig: {
+            provider: settings.provider,
+            model: settings.model,
+            temperature: settings.temperature || 0.7,
+            maxTokens: settings.maxTokens || 4000
+            // 🔒 NO API KEY - Retrieved server-side only
+          }
         })
       });
 

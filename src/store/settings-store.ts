@@ -18,15 +18,11 @@ export interface LLMModel {
 export interface LLMSettings {
   provider: string;
   model: string;
-  apiKey: string;
   maxTokens?: number;
   temperature?: number;
-  // Provider-specific API keys
-  apiKeys?: {
-    openai?: string;
-    google?: string;
-    anthropic?: string;
-  };
+  // 🔒 SECURITY: API keys removed - now managed server-side only
+  // Keys are retrieved from environment variables or Azure Key Vault
+  // Never stored in client-side state or localStorage
 }
 
 export interface ReverseEngineeringLLMSettings {
@@ -88,20 +84,17 @@ interface SettingsStore {
   // Actions
   setLLMProvider: (provider: string) => void;
   setLLMModel: (model: string) => void;
-  setAPIKey: (apiKey: string) => void;
-  setProviderAPIKey: (provider: string, apiKey: string) => void;
-  getProviderAPIKey: (provider: string) => string;
   setLLMSettings: (settings: Partial<LLMSettings>) => void;
-  loadAPIKeyFromEnv: (provider: string) => string;
   initializeFromEnvironment: () => void;
   setV1ModuleLLM: (module: keyof V1LLMSettings, type: 'primary' | 'backup', provider: string, model: string) => void;
-  getV1ModuleLLM: (module: keyof V1LLMSettings, type?: 'primary' | 'backup') => { provider: string; model: string; apiKey: string; temperature: number; maxTokens: number; };
+  getV1ModuleLLM: (module: keyof V1LLMSettings, type?: 'primary' | 'backup') => { provider: string; model: string; temperature: number; maxTokens: number; };
   resetLLMSettings: () => void;
   resetV1LLMSettings: () => void;
   validateSettings: () => boolean;
   validateV1ModuleSettings: (module: keyof V1LLMSettings) => boolean;
   getCurrentProvider: () => LLMProvider | undefined;
   getCurrentModel: () => LLMModel | undefined;
+  // 🔒 SECURITY: Removed setAPIKey, setProviderAPIKey, getProviderAPIKey - keys are server-side only
   
   // Reverse Engineering LLM Settings
   setReverseEngineeringLLM: (type: 'design' | 'code', provider: string, model: string) => void;
@@ -146,6 +139,42 @@ const DEFAULT_PROVIDERS: LLMProvider[] = [
     ]
   },
   {
+    id: 'azure-openai',
+    name: 'Azure OpenAI (Emirates)',
+    models: [
+      {
+        id: 'gpt-4.1',
+        name: 'GPT-4.1 (Emirates Deployment)',
+        description: 'Emirates Azure OpenAI GPT-4.1 deployment',
+        maxTokens: 128000
+      },
+      {
+        id: 'gpt-35-turbo',
+        name: 'GPT-3.5 Turbo (Emirates Deployment)', 
+        description: 'Emirates Azure OpenAI GPT-3.5 deployment',
+        maxTokens: 4096
+      }
+    ]
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    models: [
+      {
+        id: 'claude-3-5-sonnet-20241022',
+        name: 'Claude 3.5 Sonnet',
+        description: 'Most intelligent model with excellent reasoning',
+        maxTokens: 200000
+      },
+      {
+        id: 'claude-3-opus-20240229',
+        name: 'Claude 3 Opus',
+        description: 'Powerful model for complex tasks',
+        maxTokens: 200000
+      }
+    ]
+  },
+  {
     id: 'google',
     name: 'Google AI (Gemini)',
     models: [
@@ -181,15 +210,9 @@ const DEFAULT_PROVIDERS: LLMProvider[] = [
 const DEFAULT_SETTINGS: LLMSettings = {
   provider: DEFAULT_LLM_CONFIG.provider,
   model: DEFAULT_LLM_CONFIG.models[DEFAULT_LLM_CONFIG.provider as keyof typeof DEFAULT_LLM_CONFIG.models],
-  apiKey: API_KEYS[DEFAULT_LLM_CONFIG.provider as keyof typeof API_KEYS] || '',
   temperature: DEFAULT_LLM_CONFIG.temperature,
-  maxTokens: DEFAULT_LLM_CONFIG.maxTokens,
-  // Initialize provider-specific API keys from environment
-  apiKeys: {
-    openai: API_KEYS.openai || '',
-    google: API_KEYS.google || '',
-    anthropic: API_KEYS.anthropic || ''
-  }
+  maxTokens: DEFAULT_LLM_CONFIG.maxTokens
+  // 🔒 SECURITY: API keys removed - managed server-side only
 };
 
 const DEFAULT_V1_MODULE_CONFIG: V1ModuleLLMConfig = {
@@ -248,17 +271,13 @@ export const useSettingsStore = create<SettingsStore>()(
         const providerData = get().availableProviders.find(p => p.id === provider);
         const defaultModel = providerData?.models[0]?.id || '';
         
-        // Try to load API key from environment first, then preserve existing
-        const envApiKey = get().loadAPIKeyFromEnv(provider);
-        const currentApiKey = get().llmSettings.apiKey;
-        const apiKeyToUse = envApiKey || currentApiKey || '';
-        
+        // 🔒 SECURITY: No longer manages API keys
+        // Keys are retrieved server-side when needed
         set((state) => ({
           llmSettings: {
             ...state.llmSettings,
             provider,
-            model: defaultModel,
-            apiKey: apiKeyToUse
+            model: defaultModel
           }
         }));
       },
@@ -272,38 +291,8 @@ export const useSettingsStore = create<SettingsStore>()(
         }));
       },
 
-      setAPIKey: (apiKey: string) => {
-        // Validate API key format and reject file paths
-        if (apiKey && (apiKey.includes('\\') || apiKey.includes('/') || apiKey.includes(':'))) {
-          console.error('❌ Invalid API key format detected (contains file path characters)');
-          console.log('💡 API key should start with sk- for OpenAI or AI for Google');
-          return;
-        }
-        
-        set((state) => ({
-          llmSettings: {
-            ...state.llmSettings,
-            apiKey
-          }
-        }));
-      },
-
-      setProviderAPIKey: (provider: string, apiKey: string) => {
-        set((state) => ({
-          llmSettings: {
-            ...state.llmSettings,
-            apiKeys: {
-              ...state.llmSettings.apiKeys,
-              [provider]: apiKey
-            }
-          }
-        }));
-      },
-
-      getProviderAPIKey: (provider: string) => {
-        const { llmSettings } = get();
-        return llmSettings.apiKeys?.[provider as keyof typeof llmSettings.apiKeys] || '';
-      },
+      // 🔒 SECURITY: setAPIKey, setProviderAPIKey, getProviderAPIKey removed
+      // API keys are now managed server-side only via SecretsManager
 
       setLLMSettings: (settings: Partial<LLMSettings>) => {
         set((state) => ({
@@ -320,8 +309,9 @@ export const useSettingsStore = create<SettingsStore>()(
 
       validateSettings: () => {
         const { llmSettings } = get();
-        const providerApiKey = get().getProviderAPIKey(llmSettings.provider);
-        return !!(llmSettings.provider && llmSettings.model && providerApiKey);
+        // 🔒 SECURITY: Only validate provider/model selection
+        // API key validation happens server-side via SecretsManager
+        return !!(llmSettings.provider && llmSettings.model);
       },
 
       getCurrentProvider: () => {
@@ -355,94 +345,19 @@ export const useSettingsStore = create<SettingsStore>()(
         const { v1LLMSettings, llmSettings } = get();
         const moduleConfig = v1LLMSettings[module][type];
         
-        // Get the appropriate API key for the provider
-        const getApiKeyForProvider = (provider: string): string => {
-          console.log(`[SETTINGS STORE] 🔍 Getting API key for provider: ${provider}`);
-          console.log(`[SETTINGS STORE] 🔍 Current llmSettings:`, {
-            hasApiKeys: !!llmSettings.apiKeys,
-            globalApiKey: llmSettings.apiKey ? llmSettings.apiKey.substring(0, 8) + '...' : 'none',
-            apiKeysStructure: llmSettings.apiKeys ? Object.keys(llmSettings.apiKeys) : 'none'
-          });
-          
-          // First check provider-specific API keys
-          if (llmSettings.apiKeys) {
-            switch (provider) {
-              case 'openai':
-                if (llmSettings.apiKeys.openai) {
-                  console.log(`[SETTINGS STORE] ✅ Found provider-specific OpenAI key`);
-                  return llmSettings.apiKeys.openai;
-                }
-                break;
-              case 'google':
-                if (llmSettings.apiKeys.google) {
-                  console.log(`[SETTINGS STORE] ✅ Found provider-specific Google key`);
-                  return llmSettings.apiKeys.google;
-                }
-                break;
-              case 'anthropic':
-                if (llmSettings.apiKeys.anthropic) {
-                  console.log(`[SETTINGS STORE] ✅ Found provider-specific Anthropic key`);
-                  return llmSettings.apiKeys.anthropic;
-                }
-                break;
-            }
-          }
-          
-          // Fallback to global API key, but validate it matches the provider
-          const globalKey = llmSettings.apiKey;
-          console.log(`[SETTINGS STORE] 🔄 Checking global API key for ${provider}:`, globalKey ? globalKey.substring(0, 8) + '...' : 'none');
-          
-          if (globalKey) {
-            switch (provider) {
-              case 'openai':
-                if (globalKey.startsWith('sk-')) {
-                  console.log(`[SETTINGS STORE] ✅ Global key matches OpenAI format`);
-                  return globalKey;
-                } else {
-                  console.log(`[SETTINGS STORE] ❌ Global key doesn't match OpenAI format (starts with: ${globalKey.substring(0, 4)})`);
-                  return '';
-                }
-              case 'google':
-                if (globalKey.startsWith('AIza')) {
-                  console.log(`[SETTINGS STORE] ✅ Global key matches Google format`);
-                  return globalKey;
-                } else {
-                  console.log(`[SETTINGS STORE] ❌ Global key doesn't match Google format (starts with: ${globalKey.substring(0, 4)})`);
-                  return '';
-                }
-              case 'anthropic':
-                if (globalKey.startsWith('sk-ant-')) {
-                  console.log(`[SETTINGS STORE] ✅ Global key matches Anthropic format`);
-                  return globalKey;
-                } else {
-                  console.log(`[SETTINGS STORE] ❌ Global key doesn't match Anthropic format (starts with: ${globalKey.substring(0, 7)})`);
-                  return '';
-                }
-              default:
-                console.log(`[SETTINGS STORE] ⚠️ Unknown provider ${provider}, returning global key`);
-                return globalKey;
-            }
-          }
-          
-          console.log(`[SETTINGS STORE] ❌ No API key found for provider: ${provider}`);
-          return '';
-        };
-
-        const apiKey = getApiKeyForProvider(moduleConfig.provider);
-        
-        console.log(`[SETTINGS STORE] 🔍 DEBUG getV1ModuleLLM(${module}, ${type}):`, {
+        // 🔒 SECURITY: No longer returns API key
+        // API keys are retrieved server-side via SecretsManager
+        console.log(`[SETTINGS STORE] 🔍 getV1ModuleLLM(${module}, ${type}):`, {
           provider: moduleConfig.provider,
-          model: moduleConfig.model,
-          hasApiKey: !!apiKey,
-          apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'none'
+          model: moduleConfig.model
         });
         
         return {
           provider: moduleConfig.provider,
           model: moduleConfig.model,
-          apiKey: apiKey,
           temperature: llmSettings.temperature || 0.7,
           maxTokens: llmSettings.maxTokens || 4000
+          // 🔒 NO API KEY - Retrieved server-side only
         };
       },
 
@@ -453,18 +368,14 @@ export const useSettingsStore = create<SettingsStore>()(
       validateV1ModuleSettings: (module: keyof V1LLMSettings) => {
         const { v1LLMSettings } = get();
         const moduleConfig = v1LLMSettings[module];
-        const getApiKey = get().getProviderAPIKey;
         
-        const primaryApiKey = getApiKey(moduleConfig.primary.provider);
-        const backupApiKey = getApiKey(moduleConfig.backup.provider);
-        
+        // 🔒 SECURITY: Only validate provider/model configuration
+        // API key validation happens server-side via SecretsManager
         return !!(
           moduleConfig.primary.provider && 
-          moduleConfig.primary.model && 
-          primaryApiKey &&
+          moduleConfig.primary.model &&
           moduleConfig.backup.provider && 
-          moduleConfig.backup.model && 
-          backupApiKey
+          moduleConfig.backup.model
         );
       },
 
@@ -518,73 +429,25 @@ export const useSettingsStore = create<SettingsStore>()(
         return arriveSettings.enabled;
       },
 
-      // Environment variable integration
-      loadAPIKeyFromEnv: (provider: string) => {
-        switch (provider) {
-          case 'openai':
-            return API_KEYS.openai || '';
-          case 'google':
-            return API_KEYS.google || '';
-          case 'anthropic':
-            return API_KEYS.anthropic || '';
-          default:
-            return '';
-        }
-      },
+      // 🔒 SECURITY: Environment integration simplified - no client-side key management
 
       initializeFromEnvironment: () => {
-        const { llmSettings } = get();
-        
-        // Migrate existing settings to new structure
-        if (!llmSettings.apiKeys) {
-          console.log('[SETTINGS STORE] 🔄 Migrating to provider-specific API keys structure');
-          const newApiKeys = {
-            openai: API_KEYS.openai || (llmSettings.apiKey?.startsWith('sk-') ? llmSettings.apiKey : ''),
-            google: API_KEYS.google || (llmSettings.apiKey?.startsWith('AIza') ? llmSettings.apiKey : ''),
-            anthropic: API_KEYS.anthropic || (llmSettings.apiKey?.startsWith('sk-ant-') ? llmSettings.apiKey : '')
-          };
-          
-          set((state) => ({
-            llmSettings: {
-              ...state.llmSettings,
-              apiKeys: newApiKeys
-            }
-          }));
-          
-          console.log('[SETTINGS STORE] ✅ Migration complete:', {
-            hasOpenAI: !!newApiKeys.openai,
-            hasGoogle: !!newApiKeys.google,
-            hasAnthropic: !!newApiKeys.anthropic
-          });
-        }
-        
-        // If no API key is set, try to load from environment
-        if (!llmSettings.apiKey && llmSettings.provider) {
-          const envApiKey = get().loadAPIKeyFromEnv(llmSettings.provider);
-          if (envApiKey) {
-            set((state) => ({
-              llmSettings: {
-                ...state.llmSettings,
-                apiKey: envApiKey
-              }
-            }));
-          }
-        }
+        // API keys are now managed server-side only
+        // This function no longer loads keys into client state
+        console.log('[SETTINGS STORE] ✅ Settings initialized (server-side key management active)');
       }
     }),
     {
       name: 'aura-settings',
-      // Persist all settings including API key (user responsibility for security)
+      // 🔒 SECURITY: Persist only provider/model preferences (NO API KEYS)
       partialize: (state) => ({
         llmSettings: {
           provider: state.llmSettings.provider,
           model: state.llmSettings.model,
           temperature: state.llmSettings.temperature,
-          maxTokens: state.llmSettings.maxTokens,
-          // Persist API key for convenience (user should secure their environment)
-          apiKey: state.llmSettings.apiKey,
-          // Persist provider-specific API keys
-          apiKeys: state.llmSettings.apiKeys
+          maxTokens: state.llmSettings.maxTokens
+          // 🔒 SECURITY: API keys NO LONGER PERSISTED to localStorage
+          // Keys are managed server-side only via environment variables or Azure Key Vault
         },
         v1LLMSettings: state.v1LLMSettings,
         reverseEngineeringLLMSettings: state.reverseEngineeringLLMSettings,
@@ -594,27 +457,14 @@ export const useSettingsStore = create<SettingsStore>()(
   )
 );
 
-// Initialize the store and run migrations
+// Initialize the store with security migration
 if (typeof window !== 'undefined') {
   // Run initialization only in browser environment
   setTimeout(() => {
     useSettingsStore.getState().initializeFromEnvironment();
     
-    // One-time migration: Move legacy apiKey to provider-specific storage
-    const state = useSettingsStore.getState();
-    const { llmSettings } = state;
-    
-    if (llmSettings.apiKey && llmSettings.provider) {
-      const currentProviderKey = state.getProviderAPIKey(llmSettings.provider);
-      
-      // Only migrate if no provider-specific key exists
-      if (!currentProviderKey) {
-        console.log('Migrating legacy API key to provider-specific storage');
-        state.setProviderAPIKey(llmSettings.provider, llmSettings.apiKey);
-        
-        // Clear the legacy API key after successful migration
-        state.setLLMSettings({ apiKey: '' });
-      }
-    }
+    // 🔒 SECURITY: Legacy API key migration removed
+    // API keys are now managed server-side only via SecretsManager
+    // SecurityProvider component handles localStorage cleanup
   }, 0);
 }

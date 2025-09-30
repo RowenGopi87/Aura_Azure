@@ -1,299 +1,158 @@
-# 🎮 Aura Playground
+# 🚀 Aura Azure Deployment Images
 
-**A complete development environment for Aura SDLC system experimentation and feature development.**
+This repository contains the production-ready Docker images and deployment scripts for the Aura SDLC application, specifically configured for Azure enterprise deployment.
 
-[![GitHub](https://img.shields.io/badge/GitHub-Aura--Playground-blue)](https://github.com/RowenGopi87/Aura-Playground)
-[![Database](https://img.shields.io/badge/Database-MariaDB-orange)]()
-[![Framework](https://img.shields.io/badge/Framework-Next.js-black)]()
-[![TypeScript](https://img.shields.io/badge/Language-TypeScript-blue)]()
+## 📦 Contents
 
-## 🎯 What is Aura Playground?
+### Docker Images (Production Ready)
+- **aura-database.tar** (100MB) - MariaDB database with initialization scripts
+- **aura-application.tar** (465MB) - Next.js application with all fixes applied
+- **aura-mcp-services.tar** (701MB) - Python MCP services with Playwright integration
 
-Aura Playground is a **complete isolated environment** for developing and testing changes to the Aura SDLC system without affecting production data. It's your personal sandbox for:
+### Azure Deployment Scripts
+- **azure-push-images.ps1** - Pushes images to Azure Container Registry
+- **azure-deploy.ps1** - Deploys containers to Azure Container Instances  
+- **azure-deploy.bicep** - Infrastructure as Code template
+- **keyvault-setup.ps1** - Configures API keys in Azure Key Vault
 
-- 🔬 **Experimenting** with new features safely
-- 🛠️ **Testing** database modifications and API endpoints  
-- 🚀 **Developing** in complete isolation from production
-- 🎨 **Prototyping** new UI/UX improvements
-- 🔄 **Merging** proven changes back to production
-
-## 🏢 Enterprise Structure
-
-This repository follows an enterprise-grade folder structure designed for scalability and maintainability:
+## 🏗️ Deployment Architecture
 
 ```
-Aura-Playground/
-├── 📁 src/                    # Application source code
-├── 📁 tools/                  # Development & database tools
-├── 📁 config/                 # Configuration management
-├── 📁 infrastructure/         # Infrastructure as Code
-├── 📁 docs/                   # Documentation
-├── 📁 tests/                  # Testing framework
-├── 📁 temp/                   # Temporary & experimental files
-├── 🚀 start-aura-with-mcp.bat # Main startup script
-├── 🔄 fresh-start.bat         # Clean restart script
-└── 📖 README.md               # This file
+┌─────────────────────┐    ┌──────────────────────┐    ┌─────────────────────┐
+│   Aura Application  │    │   MCP Services       │    │   Database          │
+│   (Next.js)         │───▶│   (Python + AI)      │    │   (MariaDB)         │
+│   Port: 3000        │    │   Ports: 8000, 8931  │    │   Port: 3306        │
+└─────────────────────┘    └──────────────────────┘    └─────────────────────┘
+           │                          │                          │
+           └────────────────┬─────────┴──────────────────────────┘
+                           │
+                  ┌─────────────────────┐
+                  │   Azure VNet        │
+                  │   Private Network   │
+                  └─────────────────────┘
 ```
 
-For detailed structure documentation, see [ENTERPRISE_STRUCTURE.md](./ENTERPRISE_STRUCTURE.md).
+## 🎯 Quick Start
 
-## ⚡ Quick Start
+### Prerequisites
+- Azure CLI installed and logged in
+- PowerShell 5.1+ or PowerShell Core
+- Docker installed
+- Access to your Azure subscription
 
-### 1. Set Up Your Playground Database
-
+### 1. Configure API Keys
 ```powershell
-# Automated setup (recommended)
-tools\scripts\development\setup-playground.ps1
-
-# Or manual database setup
-tools\database\setup\setup.ps1
+.\keyvault-setup.ps1
 ```
+This will prompt you to enter:
+- OpenAI API Key (required)
+- Google API Key (optional) 
+- Anthropic API Key (optional)
 
-### 2. Configure Environment
-
-```bash
-# Copy environment template and configure
-cp config\environment\env.template .env
-
-# Edit .env file and set your values:
-# - AURA_DB_PASSWORD=your_secure_password
-# - OPENAI_API_KEY=your_openai_key (or GOOGLE_API_KEY)
-```
-
-### 3. Install Dependencies & Start
-
-```bash
-npm install
-npm run dev
-```
-
-### 4. Verify Setup
-
+### 2. Push Images to Azure Container Registry
 ```powershell
-# Run comprehensive tests
-tools\scripts\development\test-playground.ps1
-
-# Or check manually
-curl http://localhost:3000/api/database/health
+.\azure-push-images.ps1 -RegistryName "aura1devtestbeacrmaen" -ResourceGroup "maen-rg-devtest-aura1-fw-001"
 ```
 
-## 🏗️ Architecture
-
-```mermaid
-graph TB
-    A[Aura Playground] --> B[aura_playground Database]
-    A --> C[Next.js Frontend]
-    A --> D[API Routes]
-    A --> E[MariaDB Vector Storage]
-    
-    B --> F[Work Items]
-    B --> G[Business Briefs] 
-    B --> H[Requirements]
-    B --> I[Test Cases]
-    
-    subgraph "Development Flow"
-        J[Make Changes] --> K[Test in Playground]
-        K --> L[Verify & Document]
-        L --> M[Merge to Production]
-    end
-```
-
-## 🛠️ Key Features
-
-### 🗄️ **Database Management**
-- **Complete isolation** from production (`aura_playground` vs `aura_sdlc`)
-- **Data cloning** capabilities from existing systems
-- **Vector storage** support for RAG/AI features
-- **MariaDB** optimized setup with proper indexing
-
-### 🔧 **Development Tools**
-- **Automated setup** scripts for Windows (PowerShell & Batch)
-- **Testing suite** to verify environment integrity
-- **Database health monitoring** endpoints
-- **Migration utilities** for moving changes between environments
-
-### 🧪 **Testing Environment**
-- **Comprehensive test coverage** with Jest and Playwright
-- **API endpoint testing** for all major functions
-- **Database connection verification**
-- **End-to-end workflow testing**
-
-### 🚀 **Deployment Ready**
-- **Environment configuration** management
-- **MCP (Model Context Protocol)** integration support
-- **RAG system** configuration for AI features
-- **Docker** compatibility (MariaDB setup included)
-
-## 📊 Project Structure
-
-```
-Aura-Playground/
-├── 🎮 setup-playground.ps1       # Main setup script
-├── 🗄️ database/setup/            # Database initialization
-├── 🔧 scripts/                   # Utility scripts
-├── 📱 src/app/                    # Next.js application
-├── 🧪 tests/                     # Test suites
-├── 🤖 mcp/                       # MCP server integration
-├── 📖 docs/                      # Documentation
-└── 🔍 PLAYGROUND_SETUP.md        # Complete setup guide
-```
-
-## 🚦 Development Workflow
-
-### 1. **Playground Development**
-```bash
-# Make your changes in the playground environment
-git checkout -b feature/new-awesome-feature
-# ... make changes ...
-git commit -m "✨ Add awesome new feature"
-```
-
-### 2. **Testing & Verification**  
+### 3. Deploy to Azure Container Instances
 ```powershell
-# Run all tests
-.\test-playground.ps1
-npm test
-npm run test:e2e
+.\azure-deploy.ps1 -ResourceGroupName "maen-rg-devtest-aura1-fw-001" -EnvironmentPrefix "aura1-prod"
 ```
 
-### 3. **Ready for Production**
-```bash
-# Export schema/data changes if needed
-mysqldump -u aura_user -p --routines aura_playground > changes.sql
+## 🔧 Configuration
 
-# Merge back to production branch
-git checkout main
-git merge feature/new-awesome-feature
+### Existing Azure Resources (Pre-configured)
+- **Resource Group**: maen-rg-devtest-aura1-fw-001
+- **Virtual Network**: maen-vnet-devtest-aura1-nw-001  
+- **Container Registry**: aura1devtestbeacrmaen
+- **Key Vault**: aura1-devtest-be-kv-maen
+- **Azure OpenAI**: api-genai-devtest-maen
+- **Database**: Azure Database for MySQL (if migrating from container DB)
+
+### Environment Variables
+The deployment automatically configures:
+- Database connections
+- Service-to-service networking  
+- OpenAI API integration
+- Security credentials from Key Vault
+
+## 🌐 Azure OpenAI Integration
+
+Your existing Azure OpenAI endpoint:
+```
+https://api-genai-devtest-maen.azure-api.net/openai/deployments/gpt-4.1/chat/completions
 ```
 
-## 🌟 Key Differences from Production
+The deployment scripts automatically configure the MCP services to use this endpoint with your stored API keys.
 
-| Aspect | Production | Playground |
-|--------|------------|------------|
-| **Database** | `aura_sdlc` | `aura_playground` |
-| **Data Safety** | High caution required | Safe to experiment |
-| **Testing** | Limited testing | Full test suite |
-| **Changes** | Careful deployment | Rapid iteration |
-| **Rollback** | Complex process | Simple git reset |
+## 📋 Post-Deployment Steps
 
-## 🔗 API Endpoints
+1. **Test Application**: Visit the deployed URL (provided after deployment)
+2. **Verify AI Features**: Test design generation and AI-powered features
+3. **Monitor**: Use App Insights and Log Analytics for monitoring
+4. **Scale**: Adjust container resources based on usage
 
-### Core Endpoints
-- 🏥 `/api/database/health` - Database connectivity check
-- 📋 `/api/business-briefs/*` - Business brief management  
-- 🎯 `/api/initiatives/*` - Initiative tracking
-- 📖 `/api/requirements/*` - Requirements management
-- 🧪 `/api/test-cases/*` - Test case management
+## 🔒 Security Features
 
-### AuraV2 Endpoints
-- 💡 `/api/aurav2/qualify/ideas` - Idea qualification
-- 📊 `/api/aurav2/prioritize/portfolio` - Portfolio prioritization
-- 🤖 `/api/aurav2/ai/*` - AI-powered features
+- **Private Networking**: All containers deployed in existing VNet
+- **Key Vault Integration**: Secure storage of API keys
+- **Container Registry**: Private image storage
+- **Network Security Groups**: Controlled access
 
-### RAG System
-- 💬 `/api/rag/chat` - RAG-powered chat
-- 📤 `/api/rag/upload` - Document upload
-- 📊 `/api/rag/status` - System status
+## 🚢 GitLab Migration
 
-## 🔧 Configuration Files
+To transfer these images to your work GitLab repository:
 
-### Environment
-```env
-AURA_DB_NAME=aura_playground
-AURA_DB_HOST=127.0.0.1
-AURA_DB_USER=aura_user
-AURA_DB_PASSWORD=aura_password_123
-```
+1. Clone this repository
+2. Add your GitLab remote:
+   ```bash
+   git remote add gitlab <your-gitlab-repo-url>
+   ```
+3. Push images and scripts:
+   ```bash
+   git push gitlab main
+   ```
 
-### Database Setup
-- `database/setup/01-create-database.sql` - Database creation
-- `database/setup/03-create-tables.sql` - Core tables
-- `database/setup/04-create-vector-stores.sql` - Vector storage
-- `database/setup/05-create-procedures.sql` - Stored procedures
+## 📊 Resource Requirements
 
-## 📚 Documentation
+### Container Specifications
+- **Database**: 1 CPU, 2GB RAM
+- **MCP Services**: 2 CPU, 4GB RAM  
+- **Application**: 2 CPU, 4GB RAM
 
-- 📖 **[Complete Setup Guide](PLAYGROUND_SETUP.md)** - Detailed setup instructions
-- 🗄️ **[Database Documentation](docs/DATABASE_SETUP.md)** - Database schema and setup
-- 🧪 **[Testing Guide](tests/README.md)** - Testing framework documentation
-- 🤖 **[MCP Integration](docs/guides/MCP_INTEGRATION_README.md)** - MCP server setup
+### Network Requirements
+- **Inbound**: Port 3000 (HTTPS recommended)
+- **Internal**: Ports 3306, 8000, 8931 (private network)
 
-## 🎯 Use Cases
-
-### Perfect For:
-- ✅ **New feature development**
-- ✅ **Database schema changes**  
-- ✅ **API endpoint modifications**
-- ✅ **UI/UX experiments**
-- ✅ **Performance optimizations**
-- ✅ **Integration testing**
-
-### Not Suitable For:
-- ❌ Production data access
-- ❌ Live customer interactions
-- ❌ Production performance testing
-
-## 🚨 Troubleshooting
+## 🆘 Troubleshooting
 
 ### Common Issues
 
-**Database Connection Failed**
-```bash
-# Check MariaDB service
-net start mariadb
-
-# Test connection
-mysql -u aura_user -p -h 127.0.0.1
-```
-
-**Missing Tables**  
+**Images not found in ACR**
 ```powershell
-# Re-run database setup
-cd database/setup
-.\setup.ps1
+# Verify images were pushed
+az acr repository list --name aura1devtestbeacrmaen
 ```
 
-**Environment Issues**
-```bash
-# Verify .env configuration
-cat .env | grep AURA_DB
-
-# Test API health
-curl http://localhost:3000/api/database/health
+**Container startup failures**
+```powershell
+# Check container logs
+az container logs --resource-group maen-rg-devtest-aura1-fw-001 --name aura1-prod-application-cg
 ```
 
-## 🤝 Contributing
+**Database connection issues**
+- Verify network security group rules
+- Check Key Vault secret access permissions
+- Ensure subnet has available IP addresses
 
-1. **Fork** the playground repository
-2. **Create** your feature branch (`git checkout -b feature/amazing-feature`)
-3. **Test** thoroughly in the playground environment
-4. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-5. **Push** to the branch (`git push origin feature/amazing-feature`)
-6. **Open** a Pull Request
+## 📞 Support
+
+For deployment issues:
+1. Check Azure Activity Log for detailed error messages
+2. Verify all resource names match your environment
+3. Ensure sufficient permissions for resource creation
+4. Check network security group rules
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built on **Next.js** and **TypeScript**
-- Database powered by **MariaDB**
-- Vector storage for **RAG/AI** capabilities  
-- **MCP integration** for enhanced tooling
-- Comprehensive **testing suite** included
-
----
-
-## 🚀 Ready to Start?
-
-```powershell
-# Quick setup command
-.\setup-playground.ps1 && npm install && npm run dev
-```
-
-**Visit**: `http://localhost:3000` and start building! 🎉
-
----
-
-*Happy coding in your new playground environment! 🎮✨*
+Enterprise Internal Use - All Rights Reserved

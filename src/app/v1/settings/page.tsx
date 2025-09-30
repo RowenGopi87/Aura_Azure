@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSettingsStore } from '@/store/settings-store';
+import { useProviderStatus } from '@/hooks/useProviderStatus';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,27 +38,27 @@ export default function V1SettingsPage() {
     availableProviders,
     setLLMProvider,
     setLLMModel,
-    setAPIKey,
-    setProviderAPIKey,
-    getProviderAPIKey,
     setLLMSettings,
     resetLLMSettings,
     validateSettings,
     getCurrentProvider,
-    getCurrentModel,
-    loadApiKeyFromEnv
+    getCurrentModel
   } = useSettingsStore();
 
-  const [showApiKey, setShowApiKey] = useState(false);
-  // Initialize with provider-specific API key, fallback to legacy apiKey, then empty string
-  const [tempApiKey, setTempApiKey] = useState(() => {
-    const providerKey = getProviderAPIKey(llmSettings.provider);
-    return providerKey || llmSettings.apiKey || '';
-  });
+  // 🔒 SECURITY: Use provider status hook (server-side validation)
+  const { 
+    providers: providerStatuses, 
+    configurationSource, 
+    isLoading: isLoadingProviders,
+    testConnection,
+    refresh: refreshProviderStatus 
+  } = useProviderStatus();
+
   const [tempTemperature, setTempTemperature] = useState(llmSettings.temperature?.toString() || '0.7');
   const [tempMaxTokens, setTempMaxTokens] = useState(llmSettings.maxTokens?.toString() || '4000');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
 
   const currentProvider = getCurrentProvider();
   const currentModel = getCurrentModel();
@@ -117,19 +118,11 @@ export default function V1SettingsPage() {
     setSaveStatus('idle');
 
     try {
-      // Save provider-specific API key
-      setProviderAPIKey(llmSettings.provider, tempApiKey);
-      
-      // Migrate legacy API key if it exists and no provider-specific key was set
-      if (llmSettings.apiKey && !getProviderAPIKey(llmSettings.provider)) {
-        setProviderAPIKey(llmSettings.provider, llmSettings.apiKey);
-      }
-      
+      // 🔒 SECURITY: Only save provider/model/temperature/maxTokens
+      // API keys are NOT saved - managed server-side only
       setLLMSettings({
         temperature: parseFloat(tempTemperature),
-        maxTokens: parseInt(tempMaxTokens),
-        // Clear legacy API key after migration
-        apiKey: ''
+        maxTokens: parseInt(tempMaxTokens)
       });
 
       setSaveStatus('success');
@@ -142,9 +135,24 @@ export default function V1SettingsPage() {
     }
   };
 
+  const handleTestConnection = async (provider: string) => {
+    setTestingProvider(provider);
+    try {
+      const result = await testConnection(provider);
+      if (result.success) {
+        alert(`✅ ${provider} connection successful!`);
+      } else {
+        alert(`❌ ${provider} connection failed: ${result.message}`);
+      }
+    } catch (error: any) {
+      alert(`❌ Test failed: ${error.message}`);
+    } finally {
+      setTestingProvider(null);
+    }
+  };
+
   const handleReset = () => {
     resetLLMSettings();
-    setTempApiKey('');
     setTempTemperature('0.7');
     setTempMaxTokens('4000');
     setSaveStatus('idle');
@@ -164,45 +172,7 @@ export default function V1SettingsPage() {
     }
   };
 
-  const getApiKeyInstructions = (providerId: string) => {
-    switch (providerId) {
-      case 'openai':
-        return 'Get your API key from https://platform.openai.com/api-keys. Keys start with "sk-".';
-      case 'google':
-        return 'Get your API key from https://aistudio.google.com/app/apikey. Keys start with "AI".';
-      case 'anthropic':
-        return 'Get your API key from https://console.anthropic.com/. Keys start with "sk-ant-".';
-      default:
-        return 'Please select a provider to see API key instructions.';
-    }
-  };
-
-  const getApiKeyPlaceholder = (providerId: string) => {
-    switch (providerId) {
-      case 'openai':
-        return 'sk-...';
-      case 'google':
-        return 'AI...';
-      case 'anthropic':
-        return 'sk-ant-...';
-      default:
-        return 'Enter API key';
-    }
-  };
-
-  // Check if API key is available from environment
-  const hasEnvApiKey = (providerId: string) => {
-    switch (providerId) {
-      case 'openai':
-        return !!API_KEYS.openai;
-      case 'google':
-        return !!API_KEYS.google;
-      case 'anthropic':
-        return !!API_KEYS.anthropic;
-      default:
-        return false;
-    }
-  };
+  // 🔒 SECURITY: API key helper functions removed - not needed with server-side management
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -250,9 +220,12 @@ export default function V1SettingsPage() {
                   <SelectItem key={provider.id} value={provider.id}>
                     <div className="flex items-center space-x-2">
                       <span>{provider.name}</span>
-                      {hasEnvApiKey(provider.id) && (
-                        <Badge variant="secondary" className="text-xs">ENV</Badge>
-                      )}
+                      {(() => {
+                        const status = providerStatuses.find(p => p.provider === provider.id);
+                        return status?.configured && (
+                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">✓</Badge>
+                        );
+                      })()}
                     </div>
                   </SelectItem>
                 ))}
@@ -296,50 +269,71 @@ export default function V1SettingsPage() {
 
           <Separator />
 
-          {/* API Key Configuration */}
+          {/* 🔒 SECURITY: Provider Configuration Status (Server-Side Keys) */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Key className="h-4 w-4 text-gray-600" />
-              <Label htmlFor="apiKey">API Key</Label>
-              {currentProvider && hasEnvApiKey(currentProvider.id) && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Key className="h-4 w-4 text-gray-600" />
+                <Label>Provider Configuration</Label>
+              </div>
+              {configurationSource && (
                 <Badge variant="secondary" className="text-xs">
-                  Loaded from Environment
+                  {configurationSource}
                 </Badge>
               )}
             </div>
             
-            {currentProvider && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>API Key {hasEnvApiKey(currentProvider.id) ? 'Available' : 'Required'}</AlertTitle>
-                <AlertDescription>
-                  {hasEnvApiKey(currentProvider.id) 
-                    ? `API key loaded from environment variables. You can override it here if needed.`
-                    : getApiKeyInstructions(currentProvider.id)
-                  }
-                </AlertDescription>
-              </Alert>
-            )}
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>🔒 Secure Key Management</AlertTitle>
+              <AlertDescription>
+                API keys are managed securely on the server-side via environment variables.
+                <br />
+                <strong>Local Development:</strong> Configure in <code>.env.local</code> file
+                <br />
+                <strong>Azure Production:</strong> Managed via Azure Key Vault (automatic)
+              </AlertDescription>
+            </Alert>
 
-            <div className="relative">
-              <Input
-                id="apiKey"
-                type={showApiKey ? 'text' : 'password'}
-                value={tempApiKey}
-                onChange={(e) => setTempApiKey(e.target.value)}
-                placeholder={currentProvider ? getApiKeyPlaceholder(currentProvider.id) : 'Enter API key'}
-                className="pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                onClick={() => setShowApiKey(!showApiKey)}
-              >
-                {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-              </Button>
-            </div>
+            {/* Provider Status */}
+            {currentProvider && (
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">{currentProvider.name} Status:</span>
+                  {isLoadingProviders ? (
+                    <Badge variant="secondary">Checking...</Badge>
+                  ) : (
+                    (() => {
+                      const status = providerStatuses.find(p => p.provider === llmSettings.provider);
+                      return status?.configured ? (
+                        <Badge className="bg-green-600">✅ Configured</Badge>
+                      ) : (
+                        <Badge variant="destructive">⚠️ Not Configured</Badge>
+                      );
+                    })()
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleTestConnection(llmSettings.provider)}
+                  disabled={testingProvider === llmSettings.provider}
+                  className="w-full mt-2"
+                >
+                  {testingProvider === llmSettings.provider ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Testing Connection...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Test Connection
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
 
           <Separator />

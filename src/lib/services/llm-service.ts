@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CURRENT_WORKFLOW, getAIPromptContext } from '../workflow-config';
+import { AzureOpenAIService } from './azure-openai-service';
+import { secretsManager } from '@/lib/secrets/secrets-manager';
 
 // Deterministic rationale generator for fallback
 function generateDeterministicRationale(description: string, type: string): string {
@@ -233,6 +235,7 @@ export interface EpicData {
 export class LLMService {
   private openai?: OpenAI;
   private googleAI?: GoogleGenerativeAI;
+  private azureOpenAI?: AzureOpenAIService;
   private settings: LLMSettings;
 
   constructor(settings: LLMSettings) {
@@ -249,6 +252,10 @@ export class LLMService {
         this.openai = new OpenAI({
           apiKey: this.settings.apiKey,
         });
+        break;
+      case 'azure-openai':
+        // Azure OpenAI is initialized lazily in callLLM method (requires async)
+        // Validation happens server-side in SecretsManager
         break;
       case 'google':
         this.googleAI = new GoogleGenerativeAI(this.settings.apiKey);
@@ -1039,6 +1046,19 @@ Return refined initiatives:
       switch (this.settings.provider) {
         case 'openai':
           return await this.callOpenAI(systemPrompt, userPrompt);
+        case 'azure-openai':
+          // Lazy initialization for Azure OpenAI (requires async config retrieval)
+          if (!this.azureOpenAI) {
+            const azureConfig = await secretsManager.getAzureOpenAIConfig();
+            if (!azureConfig) {
+              throw new Error('Azure OpenAI not configured. Please set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_KEY.');
+            }
+            this.azureOpenAI = new AzureOpenAIService(azureConfig);
+          }
+          return await this.azureOpenAI.generateChatCompletion(systemPrompt, userPrompt, {
+            temperature: this.settings.temperature,
+            maxTokens: this.settings.maxTokens
+          });
         case 'google':
           return await this.callGoogleAI(systemPrompt, userPrompt);
         default:
@@ -1061,6 +1081,12 @@ Return refined initiatives:
       case 'openai':
         if (!apiKey.startsWith('sk-')) {
           throw new Error(`Invalid OpenAI API key format. OpenAI keys should start with 'sk-'. Current key appears to be for ${this.detectProviderFromKey(apiKey)}. Please check your settings.`);
+        }
+        break;
+      case 'azure-openai':
+        // Azure OpenAI keys have different format - less strict validation
+        if (apiKey.length < 10) {
+          throw new Error('Invalid Azure OpenAI API key format. Key appears too short.');
         }
         break;
       case 'google':

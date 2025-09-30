@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { LLMService } from '@/lib/services/llm-service';
 import { createConnection } from '@/lib/database';
+import { secretsManager, LLMProvider } from '@/lib/secrets/secrets-manager';
 
 // Request validation schema for initiatives
 const generateInitiativesSchema = z.object({
@@ -22,10 +23,9 @@ const generateInitiativesSchema = z.object({
     leadBusinessUnit: z.string().optional(),
     primaryStrategicTheme: z.string().optional(),
   }),
-  llmSettings: z.object({
+  llmConfig: z.object({
     provider: z.string(),
     model: z.string(),
-    apiKey: z.string(),
     temperature: z.number().optional(),
     maxTokens: z.number().optional(),
   }),
@@ -37,7 +37,21 @@ export async function POST(request: NextRequest) {
     
     // Validate request
     const validatedData = generateInitiativesSchema.parse(body);
-    const { businessBriefId, businessBriefData, llmSettings } = validatedData;
+    const { businessBriefId, businessBriefData, llmConfig } = validatedData;
+
+    // 🔒 SECURITY: Get API key from server-side secrets manager
+    const apiKey = await secretsManager.getApiKey(llmConfig.provider as LLMProvider);
+    if (!apiKey) {
+      throw new Error(`${llmConfig.provider} is not configured. Please set the API key in environment variables.`);
+    }
+
+    const llmSettings = {
+      provider: llmConfig.provider,
+      model: llmConfig.model,
+      apiKey,
+      temperature: llmConfig.temperature || 0.7,
+      maxTokens: llmConfig.maxTokens || 4000
+    };
 
     // Initialize LLM service
     const llmService = new LLMService(llmSettings);

@@ -1,0 +1,138 @@
+# Azure-optimized Docker Compose Configuration
+# Use this for local testing with Azure-like configuration before deployment
+
+version: '3.8'
+
+services:
+  # MariaDB Database Service (matches Azure deployment)
+  aura-database:
+    image: aura1devtestbeacrmaen.azurecr.io/aura/aura-database:latest
+    container_name: aura-database-azure
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: aura_playground
+      MYSQL_USER: aura_user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    ports:
+      - "3306:3306"
+    networks:
+      - aura-azure-network
+    volumes:
+      - aura-db-azure-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "aura_user", "-p${MYSQL_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # MCP Services (Python MCP + Playwright) - Azure Configuration  
+  aura-mcp-services:
+    image: aura1devtestbeacrmaen.azurecr.io/aura/aura-mcp-services:latest
+    container_name: aura-mcp-services-azure
+    restart: unless-stopped
+    environment:
+      # MCP Configuration
+      MCP_BRIDGE_PORT: 8000
+      PLAYWRIGHT_MCP_PORT: 8931
+      PLAYWRIGHT_HEADLESS: "true"
+      
+      # Display configuration for headless browser
+      DISPLAY: ":99"
+      
+      # Python configuration
+      PYTHONUNBUFFERED: 1
+      
+      # Azure OpenAI Configuration
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-https://api-genai-devtest-maen.azure-api.net}
+      AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4.1}
+      
+      # API Keys from Azure Key Vault (for testing, use environment variables)
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "8000:8000"   # Python MCP Server
+      - "8931:8931"   # Playwright MCP Server
+      - "8932:8932"   # Reserved for future Jira MCP
+    networks:
+      - aura-azure-network
+    volumes:
+      # Screenshots and test artifacts
+      - ./screenshots:/app/screenshots
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      aura-database:
+        condition: service_healthy
+
+  # Aura Application (Next.js) - Azure Configuration
+  aura-application:
+    image: aura1devtestbeacrmaen.azurecr.io/aura/aura-application:latest
+    container_name: aura-application-azure
+    restart: unless-stopped
+    environment:
+      # Application configuration
+      NODE_ENV: production
+      PORT: 3000
+      
+      # Database configuration (pointing to Azure container)
+      AURA_DB_HOST: aura-database
+      AURA_DB_PORT: 3306
+      AURA_DB_USER: aura_user
+      AURA_DB_PASSWORD: ${MYSQL_PASSWORD}
+      AURA_DB_NAME: aura_playground
+      AURA_DB_SSL: "false"
+      
+      # MCP configuration
+      MCP_BRIDGE_URL: http://aura-mcp-services:8000
+      PLAYWRIGHT_MCP_URL: http://aura-mcp-services:8931
+      
+      # Azure OpenAI configuration  
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-https://api-genai-devtest-maen.azure-api.net}
+      AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4.1}
+      
+      # LLM API configuration (from Azure Key Vault in production)
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      
+      # Application URLs (adjust for Azure Container Instances)
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      
+      # JWT Secret (from Azure Key Vault in production)
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3000:3000"
+    networks:
+      - aura-azure-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/database/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      aura-database:
+        condition: service_healthy
+      aura-mcp-services:
+        condition: service_healthy
+
+# Networks (simulating Azure VNet)
+networks:
+  aura-azure-network:
+    driver: bridge
+    name: aura-azure-network
+
+# Volumes (simulating Azure persistent storage)
+volumes:
+  aura-db-azure-data:
+    driver: local
+    name: aura-db-azure-data

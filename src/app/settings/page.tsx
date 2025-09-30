@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSettingsStore } from '@/store/settings-store';
+import { useProviderStatus } from '@/hooks/useProviderStatus';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,6 @@ export default function SettingsPage() {
     availableProviders,
     setLLMProvider,
     setLLMModel,
-    setAPIKey,
     setLLMSettings,
     resetLLMSettings,
     validateSettings,
@@ -43,12 +43,20 @@ export default function SettingsPage() {
     getCurrentModel
   } = useSettingsStore();
 
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [tempApiKey, setTempApiKey] = useState(llmSettings.apiKey);
+  // 🔒 SECURITY: Use provider status hook (server-side validation)
+  const { 
+    providers: providerStatuses, 
+    configurationSource, 
+    isLoading: isLoadingProviders,
+    testConnection,
+    refresh: refreshProviderStatus 
+  } = useProviderStatus();
+
   const [tempTemperature, setTempTemperature] = useState(llmSettings.temperature?.toString() || '0.7');
   const [tempMaxTokens, setTempMaxTokens] = useState(llmSettings.maxTokens?.toString() || '4000');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
 
   const currentProvider = getCurrentProvider();
   const currentModel = getCurrentModel();
@@ -261,25 +269,60 @@ export default function SettingsPage() {
               </Alert>
             )}
 
-            <div className="relative">
-              <Input
-                id="apiKey"
-                type={showApiKey ? 'text' : 'password'}
-                value={tempApiKey}
-                onChange={(e) => setTempApiKey(e.target.value)}
-                placeholder={currentProvider ? getApiKeyPlaceholder(currentProvider.id) : 'Enter API key'}
-                className="pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                onClick={() => setShowApiKey(!showApiKey)}
-              >
-                {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-              </Button>
-            </div>
+            {/* 🔒 SECURITY: Provider Status (API keys managed server-side) */}
+            {currentProvider && (
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">{currentProvider.name} Status:</span>
+                  {isLoadingProviders ? (
+                    <Badge variant="secondary">Checking...</Badge>
+                  ) : (
+                    (() => {
+                      const status = providerStatuses.find(p => p.provider === llmSettings.provider);
+                      return status?.configured ? (
+                        <Badge className="bg-green-600">✅ Configured</Badge>
+                      ) : (
+                        <Badge variant="destructive">⚠️ Not Configured</Badge>
+                      );
+                    })()
+                  )}
+                </div>
+                {configurationSource && (
+                  <p className="text-xs text-gray-600 mb-2">Source: {configurationSource}</p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleTestConnection(llmSettings.provider)}
+                  disabled={testingProvider === llmSettings.provider}
+                  className="w-full mt-2"
+                >
+                  {testingProvider === llmSettings.provider ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Testing Connection...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Test Connection
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>🔒 Secure Key Management</AlertTitle>
+              <AlertDescription>
+                API keys are managed securely on the server-side.
+                <br />
+                <strong>Local Dev:</strong> Configure in <code>.env.local</code> file
+                <br />
+                <strong>Azure Prod:</strong> Managed via Azure Key Vault
+              </AlertDescription>
+            </Alert>
           </div>
 
           <Separator />

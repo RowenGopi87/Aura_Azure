@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Layout } from "@/components/layout/layout";
 import { DatabaseProvider } from "@/components/providers/database-provider-api";
+import { SecurityProvider } from "@/components/providers/security-provider";
 import { APP_NAME, APP_DESCRIPTION } from "@/lib/config";
 import { ConditionalLayout } from "./conditional-layout";
 import "./globals.css";
@@ -31,9 +32,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <DatabaseProvider>
-          <ConditionalLayout>{children}</ConditionalLayout>
-        </DatabaseProvider>
+        <SecurityProvider>
+          <DatabaseProvider>
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </DatabaseProvider>
+        </SecurityProvider>
       </body>
     </html>
   );

@@ -1,0 +1,55 @@
+# Azure Environment Configuration Template
+# Copy this file to .env and fill in your actual values
+# This file is used for local testing with Azure-like configuration
+
+# =============================================================================
+# Azure Database Configuration
+# =============================================================================
+MYSQL_ROOT_PASSWORD=your_secure_root_password_here
+MYSQL_PASSWORD=your_secure_user_password_here
+
+# =============================================================================
+# Azure OpenAI Configuration  
+# =============================================================================
+# Your Azure OpenAI endpoint (from your Azure portal)
+AZURE_OPENAI_ENDPOINT=https://api-genai-devtest-maen.azure-api.net
+AZURE_OPENAI_DEPLOYMENT=gpt-4.1
+
+# =============================================================================
+# API Keys (stored in Azure Key Vault in production)
+# =============================================================================
+# OpenAI API Key (required)
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Google API Key (optional, for Google AI features)
+GOOGLE_API_KEY=your-google-api-key-here
+
+# Anthropic API Key (optional, for Claude features) 
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
+
+# =============================================================================
+# Application Configuration
+# =============================================================================
+# JWT Secret for session management
+JWT_SECRET=your-super-secure-jwt-secret-minimum-32-characters-long
+
+# Application URLs (adjust for your environment)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXTAUTH_URL=http://localhost:3000
+
+# =============================================================================
+# Azure Resource Configuration (for deployment scripts)
+# =============================================================================
+AZURE_SUBSCRIPTION_ID=your-azure-subscription-id
+AZURE_RESOURCE_GROUP=maen-rg-devtest-aura1-fw-001
+AZURE_CONTAINER_REGISTRY=aura1devtestbeacrmaen
+AZURE_KEY_VAULT=aura1-devtest-be-kv-maen
+
+# =============================================================================
+# Development/Testing Settings
+# =============================================================================
+# Set to 'production' for production deployment
+NODE_ENV=development
+
+# Database SSL (set to 'true' for Azure Database for MySQL)
+AURA_DB_SSL=false
