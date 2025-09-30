@@ -1,0 +1,67 @@
+{
+  "azure": {
+    "subscriptionId": "YOUR_SUBSCRIPTION_ID",
+    "tenantId": "YOUR_TENANT_ID",
+    "resourceGroup": "maen-rg-devtest-aura1-fw-001",
+    "location": "East US",
+    "environment": "development"
+  },
+  "containerRegistry": {
+    "name": "aura1devtestbeacrmaen",
+    "loginServer": "aura1devtestbeacrmaen.azurecr.io",
+    "adminEnabled": true
+  },
+  "appServices": {
+    "frontend": {
+      "name": "aura1-devtest-fe-app-maen",
+      "plan": "aura1-devtest-fe-asp-maen",
+      "runtime": "NODE|18-lts",
+      "containerImage": "aura1devtestbeacrmaen.azurecr.io/aura-application:latest"
+    },
+    "backend": {
+      "name": "aura1-devtest-be-asp-maen", 
+      "plan": "aura1-devtest-be-asp-maen",
+      "runtime": "PYTHON|3.11",
+      "containerImage": "aura1devtestbeacrmaen.azurecr.io/aura-mcp-services:latest"
+    }
+  },
+  "containerInstances": {
+    "database": {
+      "name": "aura1-devtest-be-app-maen",
+      "containerImage": "aura1devtestbeacrmaen.azurecr.io/aura-database:latest",
+      "cpu": 1.0,
+      "memory": 2.0,
+      "ports": [3306]
+    }
+  },
+  "networking": {
+    "vnet": "maen-vnet-devtest-aura1-nw-001",
+    "subnets": {
+      "appServices": "app-services-subnet",
+      "containerInstances": "container-instances-subnet",
+      "privateEndpoints": "private-endpoints-subnet"
+    }
+  },
+  "storage": {
+    "account": "aura1devtestbestmaen",
+    "containers": ["database-backups", "application-logs", "mcp-screenshots"]
+  },
+  "keyVault": {
+    "name": "aura1-devtest-kv-maen",
+    "secrets": [
+      "openai-api-key",
+      "google-api-key", 
+      "anthropic-api-key",
+      "database-root-password",
+      "database-user-password",
+      "jira-cloud-id"
+    ]
+  }
+}
+
+
+
+
+
+
+

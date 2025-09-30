@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ArriveIntegrationService } from '@/lib/arrive/integration-service';
+// import { ArriveIntegrationService } from '@/lib/arrive/integration-service';
 
 export interface Epic {
   id: string;
@@ -129,8 +129,26 @@ export const useEpicStore = create<EpicState>()(
           epics: [...state.epics, ...newEpics],
         }));
 
-        // Trigger ARRIVE generation for the new epics
-        ArriveIntegrationService.triggerDelayedGeneration('epics', newEpics);
+        // Trigger ARRIVE generation for the new epics (temporarily disabled)
+        // ArriveIntegrationService.triggerDelayedGeneration('epics', newEpics);
+
+        // Save epics to database via API (browser-safe)
+        fetch('/api/work-items/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'epic',
+            items: newEpics
+          })
+        }).then(response => response.json()).then(result => {
+          if (result.success) {
+            console.log('💾 Epics saved to database successfully');
+          } else {
+            console.error('❌ Failed to save epics to database:', result.error);
+          }
+        }).catch(error => {
+          console.error('❌ Failed to save epics to database:', error);
+        });
 
         console.log('✅ Epics added to store successfully');
         return newEpics;

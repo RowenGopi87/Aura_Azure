@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databaseService } from '@/lib/database/service';
+import { createConnection } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,12 +13,69 @@ export async function GET(request: NextRequest) {
 
     console.log('📥 Query params:', { status, limit, offset });
 
-    // Retrieve business briefs from database
-    const businessBriefs = await databaseService.getBusinessBriefs({
-      status: status || undefined,
-      limit: limit ? parseInt(limit) : undefined,
-      offset: offset ? parseInt(offset) : undefined,
-    });
+    // Connect to database
+    const connection = await createConnection();
+
+    // Build query with optional filters
+    let query = 'SELECT * FROM business_briefs';
+    const params = [];
+    
+    if (status) {
+      query += ' WHERE status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    if (limit) {
+      query += ' LIMIT ?';
+      params.push(parseInt(limit));
+      
+      if (offset) {
+        query += ' OFFSET ?';
+        params.push(parseInt(offset));
+      }
+    }
+
+    // Execute query
+    const [businessBriefsResult] = await connection.execute(query, params) as any;
+    
+    // Transform database results to expected format
+    const businessBriefs = businessBriefsResult.map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      businessOwner: row.business_owner,
+      leadBusinessUnit: row.lead_business_unit,
+      additionalBusinessUnits: row.additional_business_units,
+      primaryStrategicTheme: row.primary_strategic_theme,
+      businessObjective: row.business_objective,
+      quantifiableBusinessOutcomes: row.quantifiable_business_outcomes,
+      inScope: row.in_scope,
+      outOfScope: row.out_of_scope,
+      impactOfDoNothing: row.impact_of_do_nothing,
+      happyPath: row.happy_path,
+      exceptions: row.exceptions,
+      impactedEndUsers: row.impacted_end_users,
+      changeImpactExpected: row.change_impact_expected,
+      impactToOtherDepartments: row.impact_to_other_departments,
+      otherDepartmentsImpacted: row.other_departments_impacted,
+      impactsExistingTechnology: row.impacts_existing_technology,
+      technologySolutions: row.technology_solutions,
+      relevantBusinessOwners: row.relevant_business_owners,
+      otherTechnologyInfo: row.other_technology_info,
+      supportingDocuments: row.supporting_documents,
+      submittedBy: row.submitted_by,
+      submittedAt: row.submitted_at,
+      status: row.status,
+      priority: row.priority,
+      workflowStage: row.workflow_stage,
+      completionPercentage: row.completion_percentage,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+
+    await connection.end();
 
     console.log('✅ Retrieved business briefs from database:', businessBriefs.length);
 

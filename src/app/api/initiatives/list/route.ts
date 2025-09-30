@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databaseService } from '@/lib/database/service';
+import { createConnection } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,19 +10,53 @@ export async function GET(request: NextRequest) {
     const businessBriefId = searchParams.get('businessBriefId');
     const status = searchParams.get('status');
 
-    // Use database service to get properly mapped initiatives
-    let initiatives;
+    // Connect to database
+    const connection = await createConnection();
+
+    // Build query with filters
+    let query = 'SELECT * FROM initiatives';
+    const params = [];
+    const conditions = [];
+    
     if (businessBriefId) {
-      initiatives = await databaseService.getInitiativesByBusinessBrief(businessBriefId);
-      if (status) {
-        initiatives = initiatives.filter(init => init.status === status);
-      }
-    } else {
-      initiatives = await databaseService.getAllInitiatives();
-      if (status) {
-        initiatives = initiatives.filter(init => init.status === status);
-      }
+      conditions.push('business_brief_id = ?');
+      params.push(businessBriefId);
     }
+    
+    if (status) {
+      conditions.push('status = ?');
+      params.push(status);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    query += ' ORDER BY created_at DESC';
+
+    // Execute query
+    const [initiativesResult] = await connection.execute(query, params) as any;
+    
+    // Transform database results to expected format
+    const initiatives = initiativesResult.map((row: any) => ({
+      id: row.id,
+      businessBriefId: row.business_brief_id,
+      title: row.title,
+      description: row.description,
+      businessValue: row.business_value,
+      acceptanceCriteria: row.acceptance_criteria,
+      priority: row.priority,
+      status: row.status,
+      assignedTo: row.assigned_to,
+      portfolioId: row.portfolio_id,
+      estimatedValue: row.estimated_value,
+      workflowStage: row.workflow_stage,
+      completionPercentage: row.completion_percentage,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+
+    await connection.end();
 
     console.log('✅ Retrieved initiatives from database:', initiatives.length);
 

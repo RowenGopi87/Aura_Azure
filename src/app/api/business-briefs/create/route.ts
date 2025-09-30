@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databaseService } from '@/lib/database/service';
-import { workItemService } from '@/lib/database/work-item-service';
+import { createConnection } from '@/lib/database';
 import { z } from 'zod';
 
 const createBusinessBriefSchema = z.object({
@@ -86,17 +85,59 @@ export async function POST(request: NextRequest) {
 
     console.log('💾 Saving business brief to database...');
 
-    // Save to database
-    const createdBusinessBrief = await databaseService.createBusinessBrief(businessBriefData);
-    console.log('✅ Business brief saved successfully:', createdBusinessBrief.id);
+    // Connect to database and save business brief
+    const connection = await createConnection();
+    
+    await connection.execute(`
+      INSERT INTO business_briefs (
+        id, title, description, business_owner, lead_business_unit, primary_strategic_theme,
+        business_objective, quantifiable_business_outcomes, in_scope, impact_of_do_nothing,
+        priority, status, submitted_by, submitted_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    `, [
+      businessBriefId,
+      businessBriefData.title,
+      businessBriefData.description,
+      businessBriefData.businessOwner,
+      businessBriefData.leadBusinessUnit,
+      businessBriefData.primaryStrategicTheme,
+      businessBriefData.businessObjective,
+      businessBriefData.quantifiableBusinessOutcomes,
+      businessBriefData.inScope,
+      businessBriefData.impactOfDoNothing,
+      businessBriefData.priority,
+      businessBriefData.status,
+      businessBriefData.submittedBy,
+    ]);
 
-    // Also save to work items for search indexing
-    console.log('🔍 Indexing business brief for search...');
-    await workItemService.saveWorkItem('businessBrief', {
-      ...createdBusinessBrief,
-      type: 'businessBrief'
-    });
-    console.log('✅ Business brief indexed successfully');
+    // Get the created business brief
+    const [createdResult] = await connection.execute(
+      'SELECT * FROM business_briefs WHERE id = ?',
+      [businessBriefId]
+    ) as any;
+
+    await connection.end();
+
+    const createdBusinessBrief = {
+      id: createdResult[0].id,
+      title: createdResult[0].title,
+      description: createdResult[0].description,
+      businessOwner: createdResult[0].business_owner,
+      leadBusinessUnit: createdResult[0].lead_business_unit,
+      primaryStrategicTheme: createdResult[0].primary_strategic_theme,
+      businessObjective: createdResult[0].business_objective,
+      quantifiableBusinessOutcomes: createdResult[0].quantifiable_business_outcomes,
+      inScope: createdResult[0].in_scope,
+      impactOfDoNothing: createdResult[0].impact_of_do_nothing,
+      priority: createdResult[0].priority,
+      status: createdResult[0].status,
+      submittedBy: createdResult[0].submitted_by,
+      submittedAt: createdResult[0].submitted_at,
+      createdAt: createdResult[0].created_at,
+      updatedAt: createdResult[0].updated_at
+    };
+
+    console.log('✅ Business brief saved successfully:', createdBusinessBrief.id);
 
     return NextResponse.json({
       success: true,

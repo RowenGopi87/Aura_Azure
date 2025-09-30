@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:debug": "NODE_OPTIONS='--inspect=0.0.0.0:9229' DEBUG='*' next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,6 +12,9 @@
     "start:mcp": "node scripts/start-simple.js",
     "stop:integrated": "node scripts/stop-integrated.js",
     "stop:mcp": "node scripts/stop-integrated.js",
+    "docker:debug": "docker-compose -f deployment/local/docker-compose.debug.yml up --build",
+    "docker:debug:down": "docker-compose -f deployment/local/docker-compose.debug.yml down",
+    "docker:logs": "docker-compose -f deployment/local/docker-compose.debug.yml logs -f",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

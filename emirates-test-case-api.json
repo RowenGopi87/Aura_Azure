@@ -1,0 +1,13 @@
+{
+  "id": "TC-EMI-001",
+  "workItemId": "STORY-REV-001",
+  "workItemType": "story",
+  "testType": "functional",
+  "description": "Verify that the Emirates manage booking form displays appropriate validation messages when users attempt to check in without providing required information (family name and booking reference).",
+  "steps": "1. Navigate to emirates.com in web browser\n2. Locate the 'Manage Booking' widget/section on homepage\n3. Click on 'Manage Booking' tab if widget has multiple tabs\n4. Leave both 'Family Name/Surname' and 'Booking Reference' fields empty\n5. Click 'Check In' button\n6. Enter surname 'Smith' in Family Name field, leave Booking Reference empty\n7. Click 'Check In' button\n8. Clear Family Name field, enter 'ABC123' in Booking Reference field\n9. Click 'Check In' button\n10. Enter 'Smith' in Family Name and 'ABC123' in Booking Reference\n11. Click 'Check In' button",
+  "expectedResult": "Step 5: Validation message appears: 'Please enter a family name and booking reference'\nStep 7: Validation message appears indicating booking reference is required\nStep 9: Validation message appears indicating family name is required\nStep 11: Form submits successfully, proceeds to booking retrieval process",
+  "status": "not_run"
+}
+
+
+

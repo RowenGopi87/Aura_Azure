@@ -137,6 +137,8 @@ export const useStoryStore = create<StoryState>()(
         // Trigger ARRIVE generation for the new stories
         ArriveIntegrationService.triggerDelayedGeneration('stories', newStories);
         
+        // TODO: Add explicit save functionality for database persistence
+        
         return newStories;
       },
 

@@ -38,15 +38,22 @@ export default function V1SettingsPage() {
     setLLMProvider,
     setLLMModel,
     setAPIKey,
+    setProviderAPIKey,
+    getProviderAPIKey,
     setLLMSettings,
     resetLLMSettings,
     validateSettings,
     getCurrentProvider,
-    getCurrentModel
+    getCurrentModel,
+    loadApiKeyFromEnv
   } = useSettingsStore();
 
   const [showApiKey, setShowApiKey] = useState(false);
-  const [tempApiKey, setTempApiKey] = useState(llmSettings.apiKey);
+  // Initialize with provider-specific API key, fallback to legacy apiKey, then empty string
+  const [tempApiKey, setTempApiKey] = useState(() => {
+    const providerKey = getProviderAPIKey(llmSettings.provider);
+    return providerKey || llmSettings.apiKey || '';
+  });
   const [tempTemperature, setTempTemperature] = useState(llmSettings.temperature?.toString() || '0.7');
   const [tempMaxTokens, setTempMaxTokens] = useState(llmSettings.maxTokens?.toString() || '4000');
   const [isSaving, setIsSaving] = useState(false);
@@ -81,13 +88,18 @@ export default function V1SettingsPage() {
   const handleProviderChange = (provider: string) => {
     setLLMProvider(provider);
     
-    // Try to load API key from environment first, then preserve current key
+    // Try to load API key from environment first, then from provider-specific storage
     const envKey = loadApiKeyFromEnv(provider);
-    if (!envKey && llmSettings.apiKey) {
-      // If no env key but we have a stored key, keep it
-      setTempApiKey(llmSettings.apiKey);
-    } else if (!envKey) {
-      // Only reset if no env key and no stored key
+    const providerKey = getProviderAPIKey(provider);
+    
+    if (envKey) {
+      // Environment key takes priority
+      setTempApiKey(envKey);
+    } else if (providerKey) {
+      // Use stored provider-specific key
+      setTempApiKey(providerKey);
+    } else {
+      // No key found, reset
       setTempApiKey('');
     }
   };
@@ -105,11 +117,19 @@ export default function V1SettingsPage() {
     setSaveStatus('idle');
 
     try {
-      // Save all settings
-      setAPIKey(tempApiKey);
+      // Save provider-specific API key
+      setProviderAPIKey(llmSettings.provider, tempApiKey);
+      
+      // Migrate legacy API key if it exists and no provider-specific key was set
+      if (llmSettings.apiKey && !getProviderAPIKey(llmSettings.provider)) {
+        setProviderAPIKey(llmSettings.provider, llmSettings.apiKey);
+      }
+      
       setLLMSettings({
         temperature: parseFloat(tempTemperature),
-        maxTokens: parseInt(tempMaxTokens)
+        maxTokens: parseInt(tempMaxTokens),
+        // Clear legacy API key after migration
+        apiKey: ''
       });
 
       setSaveStatus('success');

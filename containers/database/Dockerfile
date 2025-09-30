@@ -12,8 +12,8 @@ ENV MYSQL_PASSWORD=aura_password_123
 # Copy database configuration (without skip-grant-tables)
 COPY config/database/my.ini /etc/mysql/conf.d/custom.cnf
 
-# Copy the complete database creation script as the FIRST script to run
-COPY scripts/create-complete-aura-database.sql /docker-entrypoint-initdb.d/00-create-complete-aura-database.sql
+# Copy the local database replica as the initialization script
+COPY containers/database/init-scripts/01-local-replica.sql /docker-entrypoint-initdb.d/01-local-replica.sql
 
 # Expose MariaDB port
 EXPOSE 3306

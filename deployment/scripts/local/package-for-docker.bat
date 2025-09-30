@@ -30,7 +30,7 @@ echo ✅ Docker Compose is available
 echo.
 
 echo 🛑 Stopping existing containers...
-docker-compose -f docker-compose.local.yml down --volumes --remove-orphans >nul 2>&1
+docker-compose -f deployment\local\docker-compose.yml down --volumes --remove-orphans >nul 2>&1
 echo ✅ Existing containers stopped
 
 echo 🗄️ Ensuring fresh database initialization...
@@ -107,7 +107,7 @@ echo ✅ MCP Services container built successfully
 echo.
 
 echo 🚀 Starting containerized services...
-docker-compose -f docker-compose.local.yml up -d
+docker-compose -f deployment\local\docker-compose.yml up -d
 if %errorlevel% neq 0 (
     echo ❌ Failed to start containers!
     echo.

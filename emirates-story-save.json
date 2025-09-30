@@ -1,0 +1,25 @@
+{
+  "type": "story",
+  "items": [
+    {
+      "id": "STORY-REV-001",
+      "epicId": "EPIC-REV-001",
+      "title": "Booking Retrieval Form Validation",
+      "description": "Implement form validation for the manage booking form to ensure users provide required information before attempting to retrieve their booking.",
+      "userStory": "As a customer visiting Emirates.com, I want to receive clear validation messages when I try to retrieve my booking without providing complete information, so that I understand what information is required and can successfully access my booking.",
+      "acceptanceCriteria": [
+        "When user clicks 'Check In' without entering surname, display 'Please enter a family name and booking reference'",
+        "When user enters only surname without booking reference, display validation message",
+        "When user enters only booking reference without surname, display validation message",
+        "Form fields should be clearly marked as required",
+        "Validation messages should be user-friendly and specific",
+        "Form should not submit until all required fields are completed"
+      ],
+      "priority": "high",
+      "status": "planning"
+    }
+  ]
+}
+
+
+

@@ -198,3 +198,10 @@ SELECT COUNT(*) as 'Total Tables' FROM information_schema.tables WHERE table_sch
 SELECT COUNT(*) as 'Total Roles' FROM rbac_roles;
 SELECT COUNT(*) as 'Total Users' FROM rbac_users;
 SELECT COUNT(*) as 'Total Permissions' FROM rbac_permissions;
+
+
+
+
+
+
+

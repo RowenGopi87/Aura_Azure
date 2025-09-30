@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ArriveIntegrationService } from '@/lib/arrive/integration-service';
+// import { ArriveIntegrationService } from '@/lib/arrive/integration-service';
 
 export interface Feature {
   id: string;
@@ -128,8 +128,11 @@ export const useFeatureStore = create<FeatureState>()(
           features: [...state.features, ...newFeatures],
         }));
 
-        // Trigger ARRIVE generation for the new features
-        ArriveIntegrationService.triggerDelayedGeneration('features', newFeatures);
+        // Trigger ARRIVE generation for the new features (temporarily disabled)
+        // ArriveIntegrationService.triggerDelayedGeneration('features', newFeatures);
+
+        // TODO: Add manual save button for database persistence
+        // Features will be saved when user explicitly saves them
 
         console.log('✅ Features added to store successfully');
         console.log('🔍 Total features in store after adding:', get().features.length);

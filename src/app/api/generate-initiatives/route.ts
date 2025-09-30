@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { LLMService } from '@/lib/services/llm-service';
-import { databaseService } from '@/lib/database/service';
+import { createConnection } from '@/lib/database';
 
 // Request validation schema for initiatives
 const generateInitiativesSchema = z.object({
@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`💾 Saving ${result.initiatives.length} generated initiatives to database...`);
 
+    // Connect to database using reliable method
+    const connection = await createConnection();
+
     // Save each generated initiative to the database
     const savedInitiatives = [];
     for (const initiative of result.initiatives) {
@@ -72,13 +75,55 @@ export async function POST(request: NextRequest) {
           title: initiativeData.title,
           priority: initiativeData.priority,
           status: initiativeData.status,
-          assignedTo: initiativeData.assignedTo,
-          acceptanceCriteriaType: typeof initiativeData.acceptanceCriteria,
-          acceptanceCriteriaLength: initiativeData.acceptanceCriteria.length
+          assignedTo: initiativeData.assignedTo
         });
 
-        const savedInitiative = await databaseService.createInitiative(initiativeData);
-        savedInitiatives.push(savedInitiative);
+        // Insert initiative using simple SQL
+        await connection.execute(`
+          INSERT INTO initiatives (
+            id, business_brief_id, title, description, business_value, acceptance_criteria,
+            priority, status, assigned_to, estimated_value, workflow_stage, completion_percentage,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `, [
+          initiativeData.id,
+          initiativeData.businessBriefId,
+          initiativeData.title,
+          initiativeData.description,
+          initiativeData.businessValue,
+          initiativeData.acceptanceCriteria,
+          initiativeData.priority,
+          initiativeData.status,
+          initiativeData.assignedTo,
+          initiativeData.estimatedValue,
+          initiativeData.workflowStage,
+          initiativeData.completionPercentage
+        ]);
+
+        // Get the saved initiative
+        const [savedResult] = await connection.execute(
+          'SELECT * FROM initiatives WHERE id = ?',
+          [initiativeData.id]
+        ) as any;
+
+        const savedInitiative = savedResult[0];
+        savedInitiatives.push({
+          id: savedInitiative.id,
+          businessBriefId: savedInitiative.business_brief_id,
+          title: savedInitiative.title,
+          description: savedInitiative.description,
+          businessValue: savedInitiative.business_value,
+          acceptanceCriteria: savedInitiative.acceptance_criteria,
+          priority: savedInitiative.priority,
+          status: savedInitiative.status,
+          assignedTo: savedInitiative.assigned_to,
+          estimatedValue: savedInitiative.estimated_value,
+          workflowStage: savedInitiative.workflow_stage,
+          completionPercentage: savedInitiative.completion_percentage,
+          createdAt: savedInitiative.created_at,
+          updatedAt: savedInitiative.updated_at
+        });
+        
         console.log(`✅ Saved initiative: ${savedInitiative.title} (ID: ${savedInitiative.id})`);
       } catch (saveError) {
         console.error(`❌ Failed to save initiative: ${initiative.title}`, saveError);
@@ -86,6 +131,8 @@ export async function POST(request: NextRequest) {
         // Continue with other initiatives even if one fails
       }
     }
+
+    await connection.end();
 
     console.log(`✅ Successfully saved ${savedInitiatives.length}/${result.initiatives.length} initiatives to database`);
 

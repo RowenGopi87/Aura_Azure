@@ -90,3 +90,10 @@ docker exec aura-database mariadb -u root -paura_root_password_123 aura_playgrou
 ---
 
 **The Aura SDLC system is now fully containerized and ready for Azure deployment!**
+
+
+
+
+
+
+

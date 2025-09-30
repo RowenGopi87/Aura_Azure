@@ -1,0 +1,60 @@
+# Aura SDLC Application Container - Debug Mode
+# Enhanced with debugging capabilities, logging, and monitoring
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install debugging and monitoring tools
+RUN apk add --no-cache \
+    curl \
+    htop \
+    procps \
+    net-tools \
+    tcpdump \
+    strace
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies including dev dependencies for debugging
+RUN npm ci && npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Create logs directory
+RUN mkdir -p /app/logs && chown -R nextjs:nodejs /app/logs
+
+# Change ownership to nextjs user
+RUN chown -R nextjs:nodejs /app
+
+# Switch to non-root user
+USER nextjs
+
+# Set up environment for debugging
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV DEBUG=*
+ENV NODE_OPTIONS="--inspect=0.0.0.0:9229"
+
+# Expose ports
+EXPOSE 3000 9229
+
+# Health check with enhanced debugging
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000/api/database/health || exit 1
+
+# Start the application in debug mode with enhanced logging
+CMD ["npm", "run", "dev:debug"]
+
+
+
+
+
+
+

@@ -320,7 +320,8 @@ export const useSettingsStore = create<SettingsStore>()(
 
       validateSettings: () => {
         const { llmSettings } = get();
-        return !!(llmSettings.provider && llmSettings.model && llmSettings.apiKey);
+        const providerApiKey = get().getProviderAPIKey(llmSettings.provider);
+        return !!(llmSettings.provider && llmSettings.model && providerApiKey);
       },
 
       getCurrentProvider: () => {
@@ -450,14 +451,20 @@ export const useSettingsStore = create<SettingsStore>()(
       },
 
       validateV1ModuleSettings: (module: keyof V1LLMSettings) => {
-        const { v1LLMSettings, llmSettings } = get();
+        const { v1LLMSettings } = get();
         const moduleConfig = v1LLMSettings[module];
+        const getApiKey = get().getProviderAPIKey;
+        
+        const primaryApiKey = getApiKey(moduleConfig.primary.provider);
+        const backupApiKey = getApiKey(moduleConfig.backup.provider);
+        
         return !!(
           moduleConfig.primary.provider && 
           moduleConfig.primary.model && 
+          primaryApiKey &&
           moduleConfig.backup.provider && 
           moduleConfig.backup.model && 
-          llmSettings.apiKey
+          backupApiKey
         );
       },
 
@@ -592,5 +599,22 @@ if (typeof window !== 'undefined') {
   // Run initialization only in browser environment
   setTimeout(() => {
     useSettingsStore.getState().initializeFromEnvironment();
+    
+    // One-time migration: Move legacy apiKey to provider-specific storage
+    const state = useSettingsStore.getState();
+    const { llmSettings } = state;
+    
+    if (llmSettings.apiKey && llmSettings.provider) {
+      const currentProviderKey = state.getProviderAPIKey(llmSettings.provider);
+      
+      // Only migrate if no provider-specific key exists
+      if (!currentProviderKey) {
+        console.log('Migrating legacy API key to provider-specific storage');
+        state.setProviderAPIKey(llmSettings.provider, llmSettings.apiKey);
+        
+        // Clear the legacy API key after successful migration
+        state.setLLMSettings({ apiKey: '' });
+      }
+    }
   }, 0);
 }

@@ -1509,8 +1509,8 @@ ${generatedCode.html}`;
     const isSelected = selectedWorkItemForDesign === item.id;
     const hasSavedDesign = savedDesigns[item.id];
 
-    // Simple but unique key now that duplicates are prevented at source
-    const uniqueKey = `${type}-${item.id}-L${level}-P${parentId || 'root'}`;
+    // Enhanced unique key to prevent any duplicates
+    const uniqueKey = `${type}-${item.id}-L${level}-P${parentId || 'root'}-${Math.random().toString(36).substr(2, 9)}`;
 
     return (
       <React.Fragment key={uniqueKey}>

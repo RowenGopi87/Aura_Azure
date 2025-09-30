@@ -7,8 +7,8 @@ services:
   # MariaDB Database Service
   aura-database:
     build:
-      context: .
-      dockerfile: Dockerfile.mariadb
+      context: ../../
+      dockerfile: containers/database/Dockerfile
     container_name: aura-database
     restart: unless-stopped
     environment:
@@ -24,7 +24,7 @@ services:
       # Use temporary volume for testing (will be recreated each time)
       - aura-db-data:/var/lib/mysql
       # Custom configuration
-      - ./config/database/my.ini:/etc/mysql/conf.d/custom.cnf:ro
+      - ../../config/database/my.ini:/etc/mysql/conf.d/custom.cnf:ro
     networks:
       - aura-network
     healthcheck:
@@ -37,8 +37,8 @@ services:
   # MCP Services (Python MCP + Playwright)
   aura-mcp-services:
     build:
-      context: .
-      dockerfile: Dockerfile.mcp-services
+      context: ../../
+      dockerfile: containers/mcp-services/Dockerfile
     container_name: aura-mcp-services
     restart: unless-stopped
     environment:
@@ -58,9 +58,9 @@ services:
       - "8932:8932"   # Reserved for future Jira MCP
     volumes:
       # Screenshots and test artifacts
-      - ./mcp/screenshots:/app/screenshots
+      - ../../mcp/screenshots:/app/screenshots
       # MCP configuration
-      - ./mcp/.env:/app/.env:ro
+      - ../../mcp/.env:/app/.env:ro
     networks:
       - aura-network
     healthcheck:
@@ -75,8 +75,8 @@ services:
   # Aura Application (Next.js)
   aura-application:
     build:
-      context: .
-      dockerfile: Dockerfile.aura-app.dev
+      context: ../../
+      dockerfile: containers/application/Dockerfile.dev
     container_name: aura-application
     restart: unless-stopped
     environment:

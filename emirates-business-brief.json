@@ -1,0 +1,16 @@
+{
+  "title": "Emirates Manage Bookings",
+  "description": "To serve as the primary digital touchpoint for customers, providing a seamless experience for booking flights, managing travel, and accessing a suite of related travel services, reinforcing the Emirates brand as a premium, full-service provider.",
+  "businessOwner": "Emirates Digital Team",
+  "leadBusinessUnit": "Digital Experience",
+  "primaryStrategicTheme": "Customer Experience Enhancement",
+  "businessObjective": "To increase direct online bookings, drive ancillary revenue through cross-selling, and foster customer loyalty via the Skywards program.",
+  "quantifiableBusinessOutcomes": "Increase in flight booking conversion rate. Growth in ancillary service attachment rate per booking. Increase in new Skywards loyalty program memberships originating from the homepage.",
+  "inScope": "Homepage booking widget, manage booking functionality, user authentication, booking retrieval, modification capabilities",
+  "impactOfDoNothing": "Customers will continue to use third-party booking sites, reducing direct revenue and customer data collection opportunities",
+  "priority": "high",
+  "status": "submitted"
+}
+
+
+

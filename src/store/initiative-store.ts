@@ -98,7 +98,7 @@ export const useInitiativeStore = create<InitiativeState>()(
         }
 
         const newInitiatives: Initiative[] = parsedInitiatives.map((gen, index) => ({
-          id: `init-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}-${index}`,
+          id: gen.id || `init-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}-${index}`, // Use database ID if available
           businessBriefId,
           title: gen.title || 'Untitled Initiative',
           description: gen.description || 'No description provided.',
@@ -108,10 +108,12 @@ export const useInitiativeStore = create<InitiativeState>()(
           acceptanceCriteria: gen.acceptanceCriteria || ['To be defined'],
           businessValue: gen.businessValue || 'Business value to be determined',
           workflowLevel: gen.workflowLevel || 'initiative',
-          status: 'draft' as const,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: 'AI System',
+          status: gen.status || 'draft' as const,
+          portfolioId: gen.portfolioId || undefined, // Include portfolio ID if set
+          createdAt: gen.createdAt ? new Date(gen.createdAt) : new Date(),
+          updatedAt: gen.updatedAt ? new Date(gen.updatedAt) : new Date(),
+          createdBy: gen.createdBy || 'AI System',
+          assignedTo: gen.assignedTo || undefined,
         }));
 
         console.log('✅ Generated new unique IDs for initiatives:', newInitiatives.map(init => init.id));

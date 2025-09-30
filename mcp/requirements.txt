@@ -5,4 +5,5 @@ python-dotenv
 langchain-openai
 langchain-anthropic
 langchain-google-genai
+google-genai
 certifi 

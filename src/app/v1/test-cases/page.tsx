@@ -58,7 +58,7 @@ function TestCasesPageComponent() {
   const { epics, getEpicsByFeature } = useEpicStore();
   const { stories, getStoriesByEpic } = useStoryStore();
   const { useCases } = useUseCaseStore();
-  const { llmSettings, validateSettings } = useSettingsStore();
+  const { validateV1ModuleSettings, getV1ModuleLLM } = useSettingsStore();
   const { 
     testCases, 
     addTestCase, 
@@ -66,7 +66,9 @@ function TestCasesPageComponent() {
     updateTestCase, 
     deleteTestCase, 
     updateTestCaseStatus,
-    getTestCasesByWorkItemId 
+    getTestCasesByWorkItemId,
+    loadFromDatabase,
+    clearTestCases
   } = useTestCaseStore();
 
   // State management
@@ -155,6 +157,20 @@ function TestCasesPageComponent() {
       };
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  // Load test cases from database on component mount
+  React.useEffect(() => {
+    const loadTestCases = async () => {
+      try {
+        clearTestCases(); // Clear existing test cases first
+        await loadFromDatabase(); // Load from database
+      } catch (error) {
+        console.error('❌ Failed to load test cases on mount:', error);
+      }
+    };
+
+    loadTestCases();
+  }, []); // Empty dependency array means this runs once on mount
 
   // Toggle expanded state
   const toggleExpanded = (id: string) => {
@@ -555,25 +571,85 @@ function TestCasesPageComponent() {
     try {
       console.log(`🚀 Executing test case via MCP: ${testCase.title}`);
       
-      const response = await fetch('/api/execute-test-case', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          testCase: {
-            id: testCase.id,
-            title: testCase.title,
-            description: testCase.description,
-            preconditions: testCase.preconditions || [],
-            steps: testCase.steps || [],
-            expectedResult: testCase.expectedResult || ''
-          },
-          llmProvider: 'google',
-          model: 'gemini-2.5-pro'
-        })
-      });
+      // Get current LLM settings for test execution using V1 module system
+      const isValid = validateV1ModuleSettings('test-cases');
+      if (!isValid) {
+        throw new Error('LLM settings not configured for test-cases module. Please configure API keys and module settings in Settings.');
+      }
 
-      if (!response.ok) {
-        throw new Error(`MCP execution failed: ${response.statusText}`);
+      // Try primary LLM first
+      let response;
+      let testCasesLLMSettings;
+      
+      try {
+        // Get V1 module-specific LLM settings (primary)
+        testCasesLLMSettings = getV1ModuleLLM('test-cases', 'primary');
+        console.log(`🔍 Trying primary LLM for test-cases:`, testCasesLLMSettings.provider, testCasesLLMSettings.model);
+        
+        if (!testCasesLLMSettings.apiKey) {
+          throw new Error(`API key not configured for ${testCasesLLMSettings.provider} provider. Please configure in Settings.`);
+        }
+
+        response = await fetch('/api/execute-test-case', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            testCase: {
+              id: testCase.id,
+              title: testCase.title,
+              description: testCase.description,
+              preconditions: testCase.preconditions || [],
+              steps: testCase.steps || [],
+              expectedResult: testCase.expectedResult || ''
+            },
+            llmProvider: testCasesLLMSettings.provider,
+            model: testCasesLLMSettings.model,
+            apiKey: testCasesLLMSettings.apiKey,
+            temperature: testCasesLLMSettings.temperature,
+            maxTokens: testCasesLLMSettings.maxTokens,
+            llmSource: 'primary'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Primary LLM failed: ${response.status}`);
+        }
+      } catch (primaryError) {
+        console.warn(`❌ Primary LLM failed for test-cases:`, primaryError);
+        console.log(`🔄 Falling back to backup LLM for test-cases`);
+        
+        // Try backup LLM
+        testCasesLLMSettings = getV1ModuleLLM('test-cases', 'backup');
+        console.log(`🔍 Trying backup LLM for test-cases:`, testCasesLLMSettings.provider, testCasesLLMSettings.model);
+        
+        if (!testCasesLLMSettings.apiKey) {
+          throw new Error(`Backup API key not configured for ${testCasesLLMSettings.provider} provider. Please configure in Settings.`);
+        }
+
+        response = await fetch('/api/execute-test-case', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            testCase: {
+              id: testCase.id,
+              title: testCase.title,
+              description: testCase.description,
+              preconditions: testCase.preconditions || [],
+              steps: testCase.steps || [],
+              expectedResult: testCase.expectedResult || ''
+            },
+            llmProvider: testCasesLLMSettings.provider,
+            model: testCasesLLMSettings.model,
+            apiKey: testCasesLLMSettings.apiKey,
+            temperature: testCasesLLMSettings.temperature,
+            maxTokens: testCasesLLMSettings.maxTokens,
+            llmSource: 'backup'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Both primary and backup LLMs failed for test execution`);
+        }
       }
 
       const result = await response.json();

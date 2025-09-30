@@ -1,0 +1,13 @@
+# This directory will contain Docker container logs
+# Structure:
+# logs/
+# ├── application/
+# ├── database/
+# └── mcp/
+
+
+
+
+
+
+

@@ -103,8 +103,13 @@ class AuraDatabaseService implements DatabaseService {
       // Initialize database connection
       await db.initialize();
       
-      // Initialize schema
-      await DatabaseSchema.initializeSchema();
+      // Skip schema initialization in Docker (using init script instead)
+      if (process.env.AURA_DB_HOST === 'aura-database') {
+        console.log('🐳 Docker environment detected - skipping schema initialization (using init script)');
+      } else {
+        // Initialize schema for local development only
+        await DatabaseSchema.initializeSchema();
+      }
       
       this.initialized = true;
       console.log('✅ Aura Database Service initialized successfully');

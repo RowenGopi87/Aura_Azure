@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { LLMService } from '@/lib/services/llm-service';
+import { createConnection } from '@/lib/database';
 
 // Request validation schema for stories
 const generateStoriesSchema = z.object({
@@ -24,12 +25,12 @@ const generateStoriesSchema = z.object({
     title: z.string(),
     businessObjective: z.string(),
     quantifiableBusinessOutcomes: z.string(),
-    inScope: z.string().optional(),
-    impactOfDoNothing: z.string().optional(),
-    happyPath: z.string().optional(),
-    exceptions: z.string().optional(),
-    impactedEndUsers: z.string().optional(),
-    changeImpactExpected: z.string().optional(),
+    inScope: z.string().nullable().optional(),
+    impactOfDoNothing: z.string().nullable().optional(),
+    happyPath: z.string().nullable().optional(),
+    exceptions: z.string().nullable().optional(),
+    impactedEndUsers: z.string().nullable().optional(),
+    changeImpactExpected: z.string().nullable().optional(),
   }).optional(),
   initiativeData: z.object({
     title: z.string(),
@@ -74,6 +75,55 @@ export async function POST(request: NextRequest) {
     // Generate stories through iterative process with full context
     const result = await llmService.generateStories(epicData, businessBriefData, initiativeData, featureData);
 
+    console.log(`💾 Saving ${result.stories.length} generated stories to database...`);
+
+    // Connect to database and save stories
+    const connection = await createConnection();
+    const savedStories = [];
+
+    for (const story of result.stories) {
+      try {
+        const storyId = `story-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 6)}`;
+        
+        await connection.execute(`
+          INSERT INTO stories (
+            id, epic_id, title, description, user_story, acceptance_criteria,
+            priority, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          storyId,
+          epicId,
+          story.title,
+          story.description || '',
+          story.userStory || story.description || '',
+          JSON.stringify(story.acceptanceCriteria || []),
+          story.priority || 'medium',
+          'planning'
+        ]);
+
+        savedStories.push({
+          id: storyId,
+          epicId,
+          featureId,
+          initiativeId,
+          businessBriefId,
+          title: story.title,
+          description: story.description,
+          userStory: story.userStory,
+          acceptanceCriteria: story.acceptanceCriteria,
+          priority: story.priority,
+          status: 'planning'
+        });
+
+        console.log(`✅ Saved story: ${story.title} (ID: ${storyId})`);
+      } catch (saveError) {
+        console.error(`❌ Failed to save story: ${story.title}`, saveError);
+      }
+    }
+
+    await connection.end();
+    console.log(`✅ Successfully saved ${savedStories.length}/${result.stories.length} stories to database`);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -81,8 +131,10 @@ export async function POST(request: NextRequest) {
         featureId,
         initiativeId,
         businessBriefId,
-        stories: result.stories,
+        stories: savedStories, // Return the saved stories with database IDs
         metadata: {
+          generated: result.stories.length,
+          saved: savedStories.length,
           iterationCount: result.iterationCount,
           totalTokensUsed: result.totalTokensUsed,
           processingTime: result.processingTime,

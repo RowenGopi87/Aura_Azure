@@ -1,0 +1,25 @@
+{
+  "type": "epic",
+  "items": [
+    {
+      "id": "EPIC-REV-001",
+      "featureId": "FEAT-REV-001",
+      "title": "Manage Booking Implementation",
+      "description": "Develop the user interface and functionality for the 'Managing booking' tab within the booking widget, allowing users to retrieve bookings.",
+      "businessValue": "Direct access to booking management reduces customer service calls and improves user satisfaction",
+      "acceptanceCriteria": [
+        "Booking retrieval form with surname and booking reference fields",
+        "Form validation for required fields",
+        "Integration with Emirates booking API",
+        "Error messaging for invalid inputs",
+        "Display booking details upon successful retrieval",
+        "Mobile-responsive implementation"
+      ],
+      "priority": "high",
+      "status": "backlog"
+    }
+  ]
+}
+
+
+

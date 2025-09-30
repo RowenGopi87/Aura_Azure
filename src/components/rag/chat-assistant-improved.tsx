@@ -54,11 +54,14 @@ export function ChatAssistantEmbedded({ className = '' }: ChatAssistantEmbeddedP
   }, []);
 
   const formatTimestamp = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString('en-US', {
+    // Use a consistent timezone to avoid hydration mismatches
+    // Convert to UTC to ensure server/client consistency
+    return new Intl.DateTimeFormat('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
-    });
+      hour12: true,
+      timeZone: 'UTC'
+    }).format(timestamp);
   };
 
   const formatMessage = (content: string) => {

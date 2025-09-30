@@ -5,6 +5,9 @@ import { useUseCaseStore } from '@/store/use-case-store';
 import { useSettingsStore } from '@/store/settings-store';
 import { useInitiativeStore } from '@/store/initiative-store';
 import { useNotificationStore } from '@/store/notification-store';
+import { useGenerationFlow } from '@/hooks/useGenerationFlow';
+import { GenerationPromptModal } from '@/components/modals/GenerationPromptModal';
+import { GenerationReviewModal } from '@/components/modals/GenerationReviewModal';
 import { setSelectedItem } from '@/components/layout/sidebar';
 import { notify } from '@/lib/notification-helper';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -288,6 +291,47 @@ export default function Version1IdeasPage() {
   const { llmSettings, validateSettings, getV1ModuleLLM, validateV1ModuleSettings } = useSettingsStore();
   const { addGeneratedInitiatives } = useInitiativeStore();
   const { addNotification } = useNotificationStore();
+  
+  // Initialize generation flow hook for HITL validation
+  const generationFlow = useGenerationFlow({
+    onSuccess: (savedItems) => {
+      console.log('🎉 Initiative generation completed successfully:', savedItems);
+      console.log('🔍 DEBUG - savedItems structure:', JSON.stringify(savedItems, null, 2));
+      
+      // Transform saved initiatives for portfolio assignment
+      const formattedInitiatives = savedItems.map((initiative: any) => ({
+        id: initiative.id,
+        title: initiative.title,
+        description: initiative.description,
+        businessValue: initiative.businessValue || initiative.rationale,
+        businessBriefId: initiative.businessBriefId,
+        businessBriefTitle: useCases.find(uc => uc.id === initiative.businessBriefId)?.title || 'Unknown'
+      }));
+
+      console.log('🔍 DEBUG - formattedInitiatives:', formattedInitiatives);
+      console.log('🔍 DEBUG - About to open portfolio assignment modal with', formattedInitiatives.length, 'initiatives');
+
+      // Open portfolio assignment modal with the kept initiatives
+      setGeneratedInitiativesForAssignment(formattedInitiatives);
+      setIsPortfolioAssignmentOpen(true);
+      
+      console.log('🔍 DEBUG - Portfolio assignment modal should now be open');
+      
+      notify.info('Initiatives Saved!', `Successfully saved ${savedItems.length} initiative${savedItems.length !== 1 ? 's' : ''}. Now assign them to portfolios.`);
+    },
+    onError: (error) => {
+      console.error('❌ Initiative generation failed:', error);
+      notify.error('Generation Failed', error);
+    },
+    onGenerationStart: (parentId) => {
+      console.log('🔄 Starting generation spinner for use case:', parentId);
+      setGeneratingInitiatives(prev => ({ ...prev, [parentId]: true }));
+    },
+    onGenerationEnd: (parentId) => {
+      console.log('✅ Ending generation spinner for use case:', parentId);
+      setGeneratingInitiatives(prev => ({ ...prev, [parentId]: false }));
+    }
+  });
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -963,8 +1007,58 @@ export default function Version1IdeasPage() {
     resetUploadSection();
   };
 
-  const handleStatusChange = (id: string, newStatus: any) => {
-    updateUseCase(id, { status: newStatus });
+  const handleStatusChange = async (id: string, newStatus: any) => {
+    try {
+      // Update store immediately for responsive UI
+      updateUseCase(id, { status: newStatus });
+      
+      // Save to database
+      const useCase = useCases.find(uc => uc.id === id);
+      if (!useCase) {
+        console.error('Use case not found for status update:', id);
+        return;
+      }
+
+      const response = await fetch(`/api/business-briefs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...useCase,
+          status: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to update status in database:', errorData);
+        
+        // Revert the store update if database save failed
+        updateUseCase(id, { status: useCase.status });
+        
+        notify.error('Status Update Failed', `Failed to update status: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        console.log(`✅ Status updated successfully for: ${useCase.title}`);
+        notify.success('Status Updated', `Status updated to: ${newStatus}`);
+      } else {
+        throw new Error(result.error || 'Failed to update status');
+      }
+
+    } catch (error) {
+      console.error('Error updating status:', error);
+      
+      // Revert the store update if there was an error
+      const originalUseCase = useCases.find(uc => uc.id === id);
+      if (originalUseCase) {
+        updateUseCase(id, { status: originalUseCase.status });
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      notify.error('Status Update Failed', `Failed to update status: ${errorMessage}`);
+    }
   };
 
   const handlePortfolioAssignmentComplete = async (assignments: { initiativeId: string; portfolioId: string }[]) => {
@@ -1171,87 +1265,16 @@ export default function Version1IdeasPage() {
       return;
     }
 
-    // Set generating state for this specific use case
-    setGeneratingInitiatives(prev => ({ ...prev, [useCaseId]: true }));
-
-    // Show start notification via both systems
-    notify.info('Generation Started', `🚀 Starting initiative generation for "${useCase.title}" in background...`);
+    console.log(`🚀 Starting HITL initiative generation flow for: ${useCase.title}`);
     
-    // Add to notification bell for tracking
-    addNotification({
-      title: 'Initiative Generation Started',
-      message: `Generating initiatives for "${useCase.title}" in background...`,
-      type: 'info',
-      autoClose: false
-    });
-
-    try {
-      console.log(`🔍 Generating initiatives for: ${useCase.title} (${useCaseId})`);
-
-      const requestData = {
-        businessBriefId: useCase.id,
-        businessBriefData: {
-          title: useCase.title,
-          businessObjective: useCase.businessObjective || useCase.description,
-          quantifiableBusinessOutcomes: useCase.quantifiableBusinessOutcomes || '',
-        },
-      };
-
-      const result = await tryLLMWithFallback('/api/generate-initiatives', requestData, 'Use Cases');
-
-      const { initiatives } = result.data;
-      const savedInitiatives = addGeneratedInitiatives(useCaseId, initiatives);
-      
-      // Success notification 
-      const generatedCount = result.metadata?.generated || initiatives.length;
-      const savedCount = result.metadata?.saved || initiatives.length;
-      
-      notify.info(
-        'Initiatives Generated!', 
-        `✅ Generated ${generatedCount} initiative${savedCount !== 1 ? 's' : ''} from "${useCase.title}". Now assign them to portfolios.`
-      );
-
-      console.log(`✅ Generated ${initiatives.length} initiatives for ${useCase.title}`);
-      
-      const formattedInitiatives = initiatives.map((initiative: any) => ({
-        id: initiative.id || `INIT-${Date.now().toString(36)}`,
-        title: initiative.title,
-        description: initiative.description,
-        businessValue: initiative.businessValue || initiative.rationale,
-        businessBriefId: useCase.id,
-        businessBriefTitle: useCase.title
-      }));
-
-      // If modal is already open, add to existing initiatives
-      if (isPortfolioAssignmentOpen) {
-        setGeneratedInitiativesForAssignment(prev => [...prev, ...formattedInitiatives]);
-        notify.info('New Initiatives Added!', `Added ${formattedInitiatives.length} new initiatives to assignment session.`);
-      } else {
-        // Open new modal session
-        setGeneratedInitiativesForAssignment(formattedInitiatives);
-        setIsPortfolioAssignmentOpen(true);
-      }
-
-    } catch (error) {
-      console.error('Error generating initiatives:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      notify.error('Initiative Generation Failed', `❌ Failed to generate initiatives for "${useCase.title}": ${errorMessage}`);
-      
-      // Add error notification to bell
-      addNotification({
-        title: 'Initiative Generation Failed',
-        message: `Failed to generate initiatives for "${useCase.title}": ${errorMessage}`,
-        type: 'error',
-        autoClose: false
-      });
-    } finally {
-      // Remove generating state for this use case
-      setGeneratingInitiatives(prev => {
-        const updated = { ...prev };
-        delete updated[useCaseId];
-        return updated;
-      });
-    }
+    // Use the new HITL generation flow instead of the old direct API call
+    generationFlow.initiateGeneration(
+      'BusinessBrief',
+      useCaseId,
+      'Initiative',
+      useCase.title,
+      'business-brief'
+    );
   };
 
   const handleViewDetails = (useCase: any) => {
@@ -2482,6 +2505,27 @@ export default function Version1IdeasPage() {
         initiatives={generatedInitiativesForAssignment}
         portfolios={portfolios}
         onSave={handlePortfolioMappingSave}
+      />
+
+      {/* Generation Flow Modals */}
+      <GenerationPromptModal
+        isOpen={generationFlow.isPromptModalOpen}
+        onClose={generationFlow.closePromptModal}
+        onContinue={generationFlow.handlePromptSubmit}
+        parentType={generationFlow.activeSession?.request.parentType || 'BusinessBrief'}
+        targetType={generationFlow.activeSession?.request.targetType || 'Initiative'}
+        parentTitle={generationFlow.activeSession?.request.parentTitle}
+        isLoading={generationFlow.isGenerating}
+      />
+
+      <GenerationReviewModal
+        isOpen={generationFlow.isReviewModalOpen}
+        onClose={generationFlow.closeReviewModal}
+        onConfirmSave={generationFlow.handleReviewSubmit}
+        generationData={generationFlow.activeSession?.response || null}
+        targetType={generationFlow.activeSession?.request.targetType || 'Initiative'}
+        parentTitle={generationFlow.activeSession?.request.parentTitle}
+        isLoading={generationFlow.isPersisting}
       />
     </div>
   );

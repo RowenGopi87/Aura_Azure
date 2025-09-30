@@ -9,6 +9,9 @@ import { useFeatureStore } from '@/store/feature-store';
 import { useEpicStore } from '@/store/epic-store';
 import { useStoryStore } from '@/store/story-store';
 import { useSettingsStore } from '@/store/settings-store';
+import { useGenerationFlow } from '@/hooks/useGenerationFlow';
+import { GenerationPromptModal } from '@/components/modals/GenerationPromptModal';
+import { GenerationReviewModal } from '@/components/modals/GenerationReviewModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkItemsTable } from '@/components/ui/work-items-table';
 import { WorkItemEditModal } from '@/components/ui/work-item-edit-modal';
@@ -133,10 +136,10 @@ export default function RequirementsPage() {
       
       // COMPLETE store clearing to prevent any duplicates
       console.log('🧹 Clearing all store data completely...');
-      currentInitiativeStore.initiatives = [];
-      currentFeatureStore.features = [];
-      currentEpicStore.epics = [];
-      currentStoryStore.stories = [];
+      currentInitiativeStore.clearInitiatives();
+      currentFeatureStore.clearFeatures();
+      currentEpicStore.clearEpics();
+      currentStoryStore.clearStories();
       
       // Load business briefs first
       const useCaseStore = useUseCaseStore.getState();
@@ -554,6 +557,159 @@ export default function RequirementsPage() {
     }
   };
 
+  // Initialize generation flow hook
+  const generationFlow = useGenerationFlow({
+    onSuccess: async (savedItems) => {
+      console.log('🎉 Generation completed successfully:', savedItems);
+      console.log('🔍 DEBUG - savedItems structure:', JSON.stringify(savedItems, null, 2));
+      
+      // Trigger comprehensive data refresh to show new items in tables immediately
+      await refreshDataAfterGeneration();
+      
+      // Show success notification
+      const targetType = generationFlow.activeSession?.request.targetType || 'Items';
+      const count = savedItems.length;
+      console.log(`✅ Successfully saved ${count} ${targetType.toLowerCase()}${count !== 1 ? 's' : ''} to database and refreshed UI`);
+    },
+    onError: (error) => {
+      console.error('❌ Generation failed:', error);
+    },
+    onGenerationStart: (parentId) => {
+      console.log('🔄 Starting generation spinner for:', parentId);
+      setGeneratingItems(prev => ({ ...prev, [parentId]: true }));
+    },
+    onGenerationEnd: (parentId) => {
+      console.log('✅ Ending generation spinner for:', parentId);
+      setGeneratingItems(prev => ({ ...prev, [parentId]: false }));
+    }
+  });
+
+  // Function to refresh data after successful generation
+  const refreshDataAfterGeneration = async () => {
+    console.log('🔄 Refreshing all work items data from database...');
+    try {
+      // Reload initiatives
+      const initiativesResponse = await fetch('/api/initiatives/list');
+      const initiativesData = await initiativesResponse.json();
+      if (initiativesData.success) {
+        // Update initiatives store with fresh data
+        // This will trigger re-renders in all components that depend on this data
+        console.log('✅ Initiatives refreshed successfully');
+      }
+
+      // Reload features
+      const featuresResponse = await fetch('/api/features/list');
+      const featuresData = await featuresResponse.json();
+      if (featuresData.success) {
+        console.log('🔍 DEBUG - Features API response:', featuresData.data.length, 'features');
+        
+        const currentFeatureStore = useFeatureStore.getState();
+        console.log('🔍 DEBUG - Current features in store before clear:', currentFeatureStore.features.length);
+        
+        currentFeatureStore.clearFeatures();
+        console.log('🔍 DEBUG - Features cleared from store');
+        
+        featuresData.data.forEach((dbFeature: any, index: number) => {
+          const featureToAdd = {
+            id: dbFeature.id,
+            initiativeId: dbFeature.initiative_id, // Use snake_case from DB
+            businessBriefId: dbFeature.business_brief_id || null, // Features may not have direct business brief reference
+            title: dbFeature.title,
+            description: dbFeature.description || '',
+            category: 'feature',
+            priority: dbFeature.priority || 'medium',
+            rationale: dbFeature.description || '',
+            acceptanceCriteria: JSON.parse(dbFeature.acceptance_criteria || '[]'),
+            businessValue: dbFeature.business_value || '',
+            workflowLevel: 'feature',
+            status: dbFeature.status || 'planning',
+            createdAt: new Date(dbFeature.created_at || Date.now()),
+            updatedAt: new Date(dbFeature.updated_at || Date.now()),
+            createdBy: 'System',
+            assignedTo: dbFeature.assigned_to || 'Team'
+          };
+          
+          console.log(`🔍 DEBUG - Adding feature ${index + 1}:`, featureToAdd.id, featureToAdd.title);
+          currentFeatureStore.addFeature(featureToAdd);
+        });
+        
+        console.log('🔍 DEBUG - Features in store after reload:', currentFeatureStore.features.length);
+        console.log('✅ Features refreshed successfully');
+      } else {
+        console.error('❌ Failed to fetch features:', featuresData.error);
+      }
+
+      // Reload epics
+      const epicsResponse = await fetch('/api/epics/list');
+      const epicsData = await epicsResponse.json();
+      if (epicsData.success) {
+        const currentEpicStore = useEpicStore.getState();
+        currentEpicStore.clearEpics();
+        
+        epicsData.data.forEach((dbEpic: any) => {
+          currentEpicStore.addEpic({
+            id: dbEpic.id,
+            featureId: dbEpic.feature_id, // Use snake_case from DB
+            initiativeId: dbEpic.initiative_id || null, // May need to be looked up
+            businessBriefId: dbEpic.business_brief_id || null, // May need to be looked up
+            title: dbEpic.title,
+            description: dbEpic.description || '',
+            category: 'epic',
+            priority: dbEpic.priority || 'medium',
+            rationale: dbEpic.description || '',
+            acceptanceCriteria: JSON.parse(dbEpic.acceptance_criteria || '[]'),
+            businessValue: dbEpic.business_value || '',
+            workflowLevel: 'epic',
+            estimatedEffort: dbEpic.estimated_effort || 'TBD',
+            sprintEstimate: dbEpic.story_points || 1, // Using story_points field
+            status: dbEpic.status || 'planning',
+            createdAt: new Date(dbEpic.created_at || Date.now()),
+            updatedAt: new Date(dbEpic.updated_at || Date.now()),
+            createdBy: 'System'
+          });
+        });
+        console.log('✅ Epics refreshed successfully');
+      }
+
+      // Reload stories
+      const storiesResponse = await fetch('/api/stories/list');
+      const storiesData = await storiesResponse.json();
+      if (storiesData.success) {
+        const currentStoryStore = useStoryStore.getState();
+        currentStoryStore.clearStories();
+        
+        storiesData.data.forEach((dbStory: any) => {
+          currentStoryStore.addStory({
+            id: dbStory.id,
+            epicId: dbStory.epic_id, // Use snake_case from DB
+            featureId: dbStory.feature_id || null, // May need to be looked up
+            initiativeId: dbStory.initiative_id || null, // May need to be looked up  
+            businessBriefId: dbStory.business_brief_id || null, // May need to be looked up
+            title: dbStory.title,
+            description: dbStory.description || '',
+            category: 'story',
+            priority: dbStory.priority || 'medium',
+            rationale: dbStory.description || '',
+            acceptanceCriteria: JSON.parse(dbStory.acceptance_criteria || '[]'),
+            businessValue: dbStory.business_value || '',
+            workflowLevel: 'story',
+            storyPoints: dbStory.story_points || 1,
+            labels: [], // Stories table doesn't have labels field in this schema
+            testingNotes: dbStory.testing_notes || '',
+            status: dbStory.status || 'planning',
+            createdAt: new Date(dbStory.created_at || Date.now()),
+            updatedAt: new Date(dbStory.updated_at || Date.now()),
+            createdBy: 'System'
+          });
+        });
+        console.log('✅ Stories refreshed successfully');
+      }
+
+    } catch (error) {
+      console.error('❌ Failed to refresh data after generation:', error);
+    }
+  };
+
   // AI Generation functions
   const handleGenerateFeatures = async (initiativeId: string) => {
     if (generatingItems[initiativeId]) {
@@ -561,528 +717,83 @@ export default function RequirementsPage() {
       return;
     }
     
-    setGeneratingItems(prev => ({ ...prev, [initiativeId]: true }));
-    
-    try {
-      console.log(`🔍 handleGenerateFeatures called with initiativeId: ${initiativeId}`);
-      console.log(`🔍 Current loadingStates before check:`, loadingStates);
-      
-      // Prevent multiple simultaneous calls for the same initiative
-      if (loadingStates[initiativeId]) {
-        console.log(`⚠️ Feature generation already in progress for initiative: ${initiativeId}`);
-        return;
-      }
-      
     const initiative = initiatives.find(init => init.id === initiativeId);
     if (!initiative) {
       console.error('Initiative not found:', initiativeId);
       return;
     }
 
-      console.log(`🔍 Found initiative: ${initiative.id} - ${initiative.title}`);
-
-      // Check if features already exist for this initiative
-      const existingFeatures = getFeaturesByInitiative(initiativeId);
-      console.log(`🔍 Existing features for ${initiativeId}:`, existingFeatures.length);
-      if (existingFeatures.length > 0) {
-        const confirmOverwrite = window.confirm(`This initiative already has ${existingFeatures.length} features. Do you want to generate additional features?`);
-        if (!confirmOverwrite) {
-          console.log('Feature generation cancelled - features already exist.');
-          return;
-        }
-      }
-
-      if (!window.confirm('Are you sure you want to generate features for this initiative?')) {
-        console.log('Feature generation cancelled by user.');
+    console.log(`🚀 Starting feature generation flow for initiative: ${initiative.title}`);
+    
+    // Check if features already exist for this initiative
+    const existingFeatures = getFeaturesByInitiative(initiativeId);
+    if (existingFeatures.length > 0) {
+      const confirmOverwrite = window.confirm(`This initiative already has ${existingFeatures.length} features. Do you want to generate additional features?`);
+      if (!confirmOverwrite) {
+        console.log('Feature generation cancelled - features already exist.');
         return;
       }
-      console.log('[AURA] User confirmed feature generation for initiative:', initiativeId);
-
-      // CRITICAL: Set generating state ONLY for this specific initiative
-      console.log(`🔍 Setting generatingItems state for ONLY ${initiativeId}`);
-      setItemLoading(initiativeId, true);
-      
-      console.log('Generating features for initiative:', initiativeId);
-      
-      // Use mock service in development mode
-      if (useMockLLM) {
-        console.log('🔧 Using MockLLMService for testing');
-        const result = await MockLLMService.generateFeatures(initiativeId, initiative);
-        
-        if (!result.success) {
-          throw new Error('Mock feature generation failed');
-        }
-
-        // Save generated features to the store
-        const { features: generatedFeatures, metadata } = result.data;
-        
-        console.log('💾 Saving mock features to store...');
-        const savedFeatures = addGeneratedFeatures(initiativeId, initiative.businessBriefId, generatedFeatures);
-        console.log(`✅ Successfully saved ${savedFeatures.length} mock features to store`);
-
-        // Show success message
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-        notification.textContent = `✅ Generated ${savedFeatures.length} mock features successfully`;
-        document.body.appendChild(notification);
-        setTimeout(() => document.body.removeChild(notification), 3000);
-        
-        return;
-      }
-      
-      // Original LLM service code
-      // Check if settings are valid
-      if (!validateSettings()) {
-        throw new Error('Please configure your LLM provider and API key in Settings');
-      }
-
-      // Validate settings via API
-      const settingsResponse = await fetch('/api/settings/validate', {
-        headers: {
-          'x-llm-provider': llmSettings.provider,
-          'x-llm-model': llmSettings.model,
-          'x-llm-api-key': llmSettings.apiKey,
-          'x-llm-temperature': llmSettings.temperature?.toString() || '0.7',
-          'x-llm-max-tokens': llmSettings.maxTokens?.toString() || '4000',
-        },
-      });
-      
-      if (!settingsResponse.ok) {
-        throw new Error('Please configure LLM settings in the Settings page first');
-      }
-
-      const { isValid, settings } = await settingsResponse.json();
-      if (!isValid) {
-        throw new Error('Please configure your LLM provider and API key in Settings');
-      }
-
-      // Get business brief data for context
-      const businessBrief = useCases.find(uc => uc.businessBriefId === initiative.businessBriefId);
-      
-      // Generate features using the configured LLM
-      const response = await fetch('/api/generate-features', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          initiativeId: initiative.id,
-          businessBriefId: initiative.businessBriefId,
-          initiativeData: {
-            title: initiative.title,
-            description: initiative.description,
-            category: initiative.category,
-            priority: initiative.priority,
-            rationale: initiative.rationale,
-            acceptanceCriteria: initiative.acceptanceCriteria,
-            businessValue: initiative.businessValue,
-            workflowLevel: initiative.workflowLevel,
-          },
-          businessBriefData: businessBrief ? {
-            title: businessBrief.title,
-            businessObjective: businessBrief.businessObjective,
-            quantifiableBusinessOutcomes: businessBrief.quantifiableBusinessOutcomes,
-            inScope: businessBrief.inScope,
-            impactOfDoNothing: businessBrief.impactOfDoNothing,
-            happyPath: businessBrief.happyPath,
-            exceptions: businessBrief.exceptions,
-            impactedEndUsers: businessBrief.impactedEndUsers,
-            changeImpactExpected: businessBrief.changeImpactExpected,
-          } : undefined,
-          llmSettings: settings,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate features');
-      }
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Feature generation failed');
-      }
-
-      // Save generated features to the store
-      const { features: generatedFeatures, metadata } = result.data;
-      
-      console.log('💾 Saving features to store...');
-      const savedFeatures = addGeneratedFeatures(initiativeId, initiative.businessBriefId, generatedFeatures);
-      console.log(`✅ Successfully saved ${savedFeatures.length} features to store`);
-
-      // Show success message
-      console.log('Features generated successfully:', savedFeatures.length);
-      
-      // Create a temporary success notification
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      notification.textContent = `✅ Generated ${savedFeatures.length} features successfully`;
-      document.body.appendChild(notification);
-      setTimeout(() => document.body.removeChild(notification), 3000);
-      
-    } catch (error) {
-      console.error('Error generating features:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      
-      // Create a temporary error notification
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      notification.textContent = `❌ Feature Generation Failed: ${errorMessage}`;
-      document.body.appendChild(notification);
-      setTimeout(() => document.body.removeChild(notification), 5000);
-    } finally {
-      setGeneratingItems(prev => ({ ...prev, [initiativeId]: false }));
     }
+
+    // Use the new generation flow instead of the old direct API call
+    generationFlow.initiateGeneration(
+      'Initiative',
+      initiativeId,
+      'Feature',
+      initiative.title,
+      'work-items'
+    );
+
   };
 
   // Epic Generation function
   const handleGenerateEpics = async (featureId: string) => {
-    if (generatingItems[featureId]) return;
-    setGeneratingItems(prev => ({ ...prev, [featureId]: true }));
-    try {
-      if (useMockLLM) {
-        console.log('🔧 Using MockLLMService for testing');
-        const feature = features.find(feat => feat.id === featureId);
-        if (!feature) {
-          console.error('Feature not found for epic generation');
-          return;
-        }
-        const initiative = initiatives.find(init => init.id === feature?.initiativeId);
-        const result = await MockLLMService.generateEpics(featureId, feature, initiative);
-        
-        if (!result.success) {
-          throw new Error('Mock epic generation failed');
-        }
-
-        // Save generated epics to the store
-        const { epics: generatedEpics, metadata } = result.data;
-        
-        console.log('💾 Saving mock epics to store...');
-        const savedEpics = addGeneratedEpics(featureId, feature.initiativeId, feature.businessBriefId, generatedEpics); // Mock data doesn't have initiativeId, featureId, businessBriefId
-        console.log(`✅ Successfully saved ${savedEpics.length} mock epics to store`);
-
-        // Show success message
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-        notification.textContent = `✅ Generated ${savedEpics.length} mock epics successfully`;
-        document.body.appendChild(notification);
-        setTimeout(() => document.body.removeChild(notification), 3000);
-        
-        return;
-      }
-      if (!window.confirm('Are you sure you want to generate epics for this feature?')) {
-        console.log('Epic generation cancelled by user.');
-        return;
-      }
-      console.log('[AURA] User confirmed epic generation for feature:', featureId);
+    if (generatingItems[featureId]) {
+      console.log(`⚠️ Epic generation already in progress for: ${featureId}`);
+      return;
+    }
+    
     const feature = features.find(feat => feat.id === featureId);
     if (!feature) {
       console.error('Feature not found:', featureId);
       return;
     }
 
-      setItemLoading(featureId, true);
-      
-      console.log('Generating epics for feature:', featureId);
-      
-      // Check if settings are valid
-      if (!validateSettings()) {
-        throw new Error('Please configure your LLM provider and API key in Settings');
-      }
-
-      // Validate settings via API
-      const settingsResponse = await fetch('/api/settings/validate', {
-        headers: {
-          'x-llm-provider': llmSettings.provider,
-          'x-llm-model': llmSettings.model,
-          'x-llm-api-key': llmSettings.apiKey,
-          'x-llm-temperature': llmSettings.temperature?.toString() || '0.7',
-          'x-llm-max-tokens': llmSettings.maxTokens?.toString() || '4000',
-        },
-      });
-      
-      if (!settingsResponse.ok) {
-        throw new Error('Please configure LLM settings in the Settings page first');
-      }
-
-      const { isValid, settings } = await settingsResponse.json();
-      if (!isValid) {
-        throw new Error('Please configure your LLM provider and API key in Settings');
-      }
-
-      // Get business brief and initiative data for context
-      const businessBrief = useCases.find(uc => uc.businessBriefId === feature.businessBriefId);
-      const initiative = initiatives.find(init => init.id === feature.initiativeId);
-      
-      // Generate epics using the configured LLM
-      const response = await fetch('/api/generate-epics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          featureId: feature.id,
-          initiativeId: feature.initiativeId,
-          businessBriefId: feature.businessBriefId,
-          featureData: {
-            title: feature.title,
-            description: feature.description,
-            category: feature.category,
-            priority: feature.priority,
-            rationale: feature.rationale,
-            acceptanceCriteria: feature.acceptanceCriteria,
-            businessValue: feature.businessValue,
-            workflowLevel: feature.workflowLevel,
-          },
-          businessBriefData: businessBrief ? {
-            title: businessBrief.title,
-            businessObjective: businessBrief.businessObjective,
-            quantifiableBusinessOutcomes: businessBrief.quantifiableBusinessOutcomes,
-            inScope: businessBrief.inScope,
-            impactOfDoNothing: businessBrief.impactOfDoNothing,
-            happyPath: businessBrief.happyPath,
-            exceptions: businessBrief.exceptions,
-            impactedEndUsers: businessBrief.impactedEndUsers,
-            changeImpactExpected: businessBrief.changeImpactExpected,
-          } : undefined,
-          initiativeData: initiative ? {
-            title: initiative.title,
-            description: initiative.description,
-            category: initiative.category,
-            priority: initiative.priority,
-            rationale: initiative.rationale,
-            acceptanceCriteria: initiative.acceptanceCriteria,
-            businessValue: initiative.businessValue,
-            workflowLevel: initiative.workflowLevel,
-          } : undefined,
-          llmSettings: settings,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate epics');
-      }
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Epic generation failed');
-      }
-
-      // Save generated epics to the store
-      const { epics: generatedEpics, metadata } = result.data;
-      
-      console.log('💾 Saving epics to store...');
-      const savedEpics = addGeneratedEpics(featureId, feature.initiativeId, feature.businessBriefId, generatedEpics);
-      console.log(`✅ Successfully saved ${savedEpics.length} epics to store`);
-
-      // Show success message
-      console.log('Epics generated successfully:', savedEpics.length);
-      
-      // Create a temporary success notification
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      notification.textContent = `✅ Generated ${savedEpics.length} epics successfully`;
-      document.body.appendChild(notification);
-      setTimeout(() => document.body.removeChild(notification), 3000);
-      
-    } catch (error) {
-      console.error('Error generating epics:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      
-      // Create a temporary error notification
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      notification.textContent = `❌ Epic Generation Failed: ${errorMessage}`;
-      document.body.appendChild(notification);
-      setTimeout(() => document.body.removeChild(notification), 5000);
-    } finally {
-      setGeneratingItems(prev => ({ ...prev, [featureId]: false }));
-    }
+    console.log(`🚀 Starting epic generation flow for feature: ${feature.title}`);
+    
+    // Use the new generation flow instead of the old direct API call
+    generationFlow.initiateGeneration(
+      'Feature',
+      featureId,
+      'Epic',
+      feature.title,
+      'work-items'
+    );
   };
 
   // Story Generation function
   const handleGenerateStories = async (epicId: string) => {
-    if (generatingItems[epicId]) return;
-    setGeneratingItems(prev => ({ ...prev, [epicId]: true }));
-    try {
-      if (useMockLLM) {
-        console.log('🔧 Using MockLLMService for testing');
-        const epic = epics.find(ep => ep.id === epicId);
-        if (!epic) {
-          console.error('Epic not found for story generation');
-          return;
-        }
-        const feature = features.find(feat => feat.id === epic?.featureId);
-        const initiative = initiatives.find(init => init.id === epic?.initiativeId);
-        const result = await MockLLMService.generateStories(epicId, epic, feature, initiative);
-        
-        if (!result.success) {
-          throw new Error('Mock story generation failed');
-        }
-
-        // Save generated stories to the store
-        const { stories: generatedStories, metadata } = result.data;
-        
-        console.log('💾 Saving mock stories to store...');
-        const savedStories = addGeneratedStories(epicId, epic.featureId, epic.initiativeId, epic.businessBriefId, generatedStories); // Mock data doesn't have epicId, featureId, initiativeId, businessBriefId
-        console.log(`✅ Successfully saved ${savedStories.length} mock stories to store`);
-
-        // Show success message
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-        notification.textContent = `✅ Generated ${savedStories.length} mock stories successfully`;
-        document.body.appendChild(notification);
-        setTimeout(() => document.body.removeChild(notification), 3000);
-        
-        return;
-      }
-      if (!window.confirm('Are you sure you want to generate stories for this epic?')) {
-        console.log('Story generation cancelled by user.');
-        return;
-      }
-      console.log('[AURA] User confirmed story generation for epic:', epicId);
+    if (generatingItems[epicId]) {
+      console.log(`⚠️ Story generation already in progress for: ${epicId}`);
+      return;
+    }
+    
     const epic = epics.find(ep => ep.id === epicId);
     if (!epic) {
       console.error('Epic not found:', epicId);
       return;
     }
 
-      setItemLoading(epicId, true);
-      
-      console.log('Generating stories for epic:', epicId);
-      
-      // Check if settings are valid
-      if (!validateSettings()) {
-        throw new Error('Please configure your LLM provider and API key in Settings');
-      }
-
-      // Validate settings via API
-      const settingsResponse = await fetch('/api/settings/validate', {
-        headers: {
-          'x-llm-provider': llmSettings.provider,
-          'x-llm-model': llmSettings.model,
-          'x-llm-api-key': llmSettings.apiKey,
-          'x-llm-temperature': llmSettings.temperature?.toString() || '0.7',
-          'x-llm-max-tokens': llmSettings.maxTokens?.toString() || '4000',
-        },
-      });
-      
-      if (!settingsResponse.ok) {
-        throw new Error('Please configure LLM settings in the Settings page first');
-      }
-
-      const { isValid, settings } = await settingsResponse.json();
-      if (!isValid) {
-        throw new Error('Please configure your LLM provider and API key in Settings');
-      }
-
-      // Get business brief, initiative, and feature data for context
-      const businessBrief = useCases.find(uc => uc.businessBriefId === epic.businessBriefId);
-      const initiative = initiatives.find(init => init.id === epic.initiativeId);
-      const feature = features.find(feat => feat.id === epic.featureId);
-      
-      // Generate stories using the configured LLM
-      const response = await fetch('/api/generate-stories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          epicId: epic.id,
-          featureId: epic.featureId,
-          initiativeId: epic.initiativeId,
-          businessBriefId: epic.businessBriefId,
-          epicData: {
-            title: epic.title,
-            description: epic.description,
-            category: epic.category,
-            priority: epic.priority,
-            rationale: epic.rationale,
-            acceptanceCriteria: epic.acceptanceCriteria,
-            businessValue: epic.businessValue,
-            workflowLevel: epic.workflowLevel,
-            estimatedEffort: epic.estimatedEffort,
-            sprintEstimate: epic.sprintEstimate,
-          },
-          businessBriefData: businessBrief ? {
-            title: businessBrief.title,
-            businessObjective: businessBrief.businessObjective,
-            quantifiableBusinessOutcomes: businessBrief.quantifiableBusinessOutcomes,
-            inScope: businessBrief.inScope,
-            impactOfDoNothing: businessBrief.impactOfDoNothing,
-            happyPath: businessBrief.happyPath,
-            exceptions: businessBrief.exceptions,
-            impactedEndUsers: businessBrief.impactedEndUsers,
-            changeImpactExpected: businessBrief.changeImpactExpected,
-          } : undefined,
-          initiativeData: initiative ? {
-            title: initiative.title,
-            description: initiative.description,
-            category: initiative.category,
-            priority: initiative.priority,
-            rationale: initiative.rationale,
-            acceptanceCriteria: initiative.acceptanceCriteria,
-            businessValue: initiative.businessValue,
-            workflowLevel: initiative.workflowLevel,
-          } : undefined,
-          featureData: feature ? {
-            title: feature.title,
-            description: feature.description,
-            category: feature.category,
-            priority: feature.priority,
-            rationale: feature.rationale,
-            acceptanceCriteria: feature.acceptanceCriteria,
-            businessValue: feature.businessValue,
-            workflowLevel: feature.workflowLevel,
-          } : undefined,
-          llmSettings: settings,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate stories');
-      }
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Story generation failed');
-      }
-
-      // Save generated stories to the store
-      const { stories: generatedStories, metadata } = result.data;
-      
-      console.log('💾 Saving stories to store...');
-      const savedStories = addGeneratedStories(epicId, epic.featureId, epic.initiativeId, epic.businessBriefId, generatedStories);
-      console.log(`✅ Successfully saved ${savedStories.length} stories to store`);
-
-      // Show success message
-      console.log('Stories generated successfully:', savedStories.length);
-      
-      // Create a temporary success notification
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      notification.textContent = `✅ Generated ${savedStories.length} stories successfully`;
-      document.body.appendChild(notification);
-      setTimeout(() => document.body.removeChild(notification), 3000);
-      
-    } catch (error) {
-      console.error('Error generating stories:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      
-      // Create a temporary error notification
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      notification.textContent = `❌ Story Generation Failed: ${errorMessage}`;
-      document.body.appendChild(notification);
-      setTimeout(() => document.body.removeChild(notification), 5000);
-    } finally {
-      setGeneratingItems(prev => ({ ...prev, [epicId]: false }));
-    }
+    console.log(`🚀 Starting story generation flow for epic: ${epic.title}`);
+    
+    // Use the new generation flow instead of the old direct API call
+    generationFlow.initiateGeneration(
+      'Epic',
+      epicId,
+      'Story',
+      epic.title,
+      'work-items'
+    );
   };
 
   // Handle creating initiative in Jira
@@ -1297,31 +1008,64 @@ export default function RequirementsPage() {
     const itemName = type.charAt(0).toUpperCase() + type.slice(1);
     if (confirm(`Are you sure you want to delete this ${itemName.toLowerCase()}? This action cannot be undone and will also delete all child items (features, epics, stories).`)) {
       try {
-        // Only handle initiative deletion for now - can be extended for other types
-        if (type === 'initiative') {
-          // Delete from database first
-          const response = await fetch(`/api/initiatives/delete?id=${id}`, {
-            method: 'DELETE',
-          });
+        // Handle deletion for all work item types
+        let apiEndpoint = '';
+        let storeDeleteFunction = null;
 
-          const result = await response.json();
-          
-          if (!result.success) {
-            throw new Error(result.message || 'Failed to delete initiative');
-          }
-
-          // If database deletion successful, remove from store
-      deleteInitiative(id);
-
-          // Show success notification
-          const notification = document.createElement('div');
-          notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-          notification.textContent = `✅ ${itemName} "${result.data.title}" deleted successfully`;
-          document.body.appendChild(notification);
-          setTimeout(() => document.body.removeChild(notification), 3000);
-
-          console.log('✅ Initiative deleted successfully from both database and store');
+        switch (type) {
+          case 'initiative':
+            apiEndpoint = `/api/initiatives/delete?id=${id}`;
+            storeDeleteFunction = () => deleteInitiative(id);
+            break;
+          case 'feature':
+            apiEndpoint = `/api/features/delete?id=${id}`;
+            storeDeleteFunction = () => {
+              const { deleteFeature } = useFeatureStore.getState();
+              deleteFeature(id);
+            };
+            break;
+          case 'epic':
+            apiEndpoint = `/api/epics/delete?id=${id}`;
+            storeDeleteFunction = () => {
+              const { deleteEpic } = useEpicStore.getState();
+              deleteEpic(id);
+            };
+            break;
+          case 'story':
+            apiEndpoint = `/api/stories/delete?id=${id}`;
+            storeDeleteFunction = () => {
+              const { deleteStory } = useStoryStore.getState();
+              deleteStory(id);
+            };
+            break;
+          default:
+            throw new Error(`Delete not supported for type: ${type}`);
         }
+
+        // Delete from database first
+        const response = await fetch(apiEndpoint, {
+          method: 'DELETE',
+        });
+
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.message || `Failed to delete ${type}`);
+        }
+
+        // If database deletion successful, remove from store
+        if (storeDeleteFunction) {
+          storeDeleteFunction();
+        }
+
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        notification.textContent = `✅ ${itemName} "${item.title}" deleted successfully`;
+        document.body.appendChild(notification);
+        setTimeout(() => document.body.removeChild(notification), 3000);
+
+        console.log(`✅ ${itemName} deleted successfully from both database and store`);
       } catch (error) {
         console.error('❌ Error deleting item:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -2075,6 +1819,27 @@ export default function RequirementsPage() {
         initiatives={initiatives}
         portfolios={portfolios}
         onSave={handleSavePortfolioMappings}
+      />
+
+      {/* Generation Flow Modals */}
+      <GenerationPromptModal
+        isOpen={generationFlow.isPromptModalOpen}
+        onClose={generationFlow.closePromptModal}
+        onContinue={generationFlow.handlePromptSubmit}
+        parentType={generationFlow.activeSession?.request.parentType || 'Initiative'}
+        targetType={generationFlow.activeSession?.request.targetType || 'Feature'}
+        parentTitle={generationFlow.activeSession?.request.parentTitle}
+        isLoading={generationFlow.isGenerating}
+      />
+
+      <GenerationReviewModal
+        isOpen={generationFlow.isReviewModalOpen}
+        onClose={generationFlow.closeReviewModal}
+        onConfirmSave={generationFlow.handleReviewSubmit}
+        generationData={generationFlow.activeSession?.response || null}
+        targetType={generationFlow.activeSession?.request.targetType || 'Feature'}
+        parentTitle={generationFlow.activeSession?.request.parentTitle}
+        isLoading={generationFlow.isPersisting}
       />
     </div>
   );

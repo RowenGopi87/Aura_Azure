@@ -1301,7 +1301,29 @@ CRITICAL REQUIREMENTS:
     const result = await this.callLLM(systemPrompt, userPrompt);
     
     try {
-      const featuresData = JSON.parse(result.content);
+      console.log('🔍 Raw LLM response for features:', result.content.substring(0, 500) + '...');
+      console.log('🔍 Response type:', typeof result.content);
+      console.log('🔍 Response length:', result.content.length);
+      
+      // Try to extract JSON from markdown code blocks if needed
+      let jsonContent = result.content.trim();
+      
+      // Check if response is wrapped in markdown code blocks
+      if (jsonContent.includes('```json')) {
+        const jsonMatch = jsonContent.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonContent = jsonMatch[1].trim();
+          console.log('🔍 Extracted JSON from markdown code block');
+        }
+      } else if (jsonContent.includes('```')) {
+        const codeMatch = jsonContent.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          jsonContent = codeMatch[1].trim();
+          console.log('🔍 Extracted JSON from generic code block');
+        }
+      }
+      
+      const featuresData = JSON.parse(jsonContent);
       
       // Handle different JSON response formats
       let features = [];
@@ -2225,6 +2247,206 @@ Return refined stories as PURE JSON (no markdown, no code blocks):
     } catch (error) {
       console.error('❌ LLMService: Error generating test cases:', error);
       throw error;
+    }
+  }
+
+  // New generation methods with quantity and context support for HITL flow
+  async generateInitiativesWithQuantity(businessBrief: any, quantity: number = 3, additionalContext?: string): Promise<{ initiatives: any[]; tokensUsed: number; promptUsed: string }> {
+    const workflowContext = getAIPromptContext();
+    
+    const systemPrompt = `You are a senior business analyst and strategic planning expert. Generate exactly ${quantity} strategic initiatives based on the provided business brief.
+
+${workflowContext}
+
+IMPORTANT:
+- Generate exactly ${quantity} initiatives
+- Each initiative must be actionable, valuable, and decomposable into features
+- Focus on strategic business outcomes and measurable value
+- Avoid generic or vague descriptions
+${additionalContext ? `\n\nADDITIONAL CONTEXT: ${additionalContext}` : ''}
+
+Generate initiatives as PURE JSON (no markdown, no code blocks):
+{
+  "initiatives": [
+    {
+      "title": "Initiative title",
+      "description": "Detailed description",
+      "rationale": "Strategic rationale",
+      "category": "strategic",
+      "priority": "high|medium|low",
+      "acceptanceCriteria": ["criteria 1", "criteria 2"],
+      "businessValue": "Business value statement"
+    }
+  ]
+}`;
+    
+    const userPrompt = `Business Brief:
+Title: ${businessBrief.title || 'N/A'}
+Objective: ${businessBrief.businessObjective || 'N/A'}
+Outcomes: ${businessBrief.quantifiableBusinessOutcomes || 'N/A'}
+Scope: ${businessBrief.inScope || 'N/A'}
+Impact: ${businessBrief.impactOfDoNothing || 'N/A'}`;
+    
+    const result = await this.callLLM(systemPrompt, userPrompt);
+    
+    try {
+      const parsed = JSON.parse(result.content);
+      return {
+        initiatives: parsed.initiatives || [],
+        tokensUsed: result.tokensUsed,
+        promptUsed: systemPrompt
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse initiatives response: ${error}`);
+    }
+  }
+
+  async generateFeaturesWithQuantity(initiative: any, businessBrief?: any, quantity: number = 4, additionalContext?: string): Promise<{ features: any[]; tokensUsed: number; promptUsed: string }> {
+    const workflowContext = getAIPromptContext();
+    
+    const systemPrompt = `You are a senior product manager and feature decomposition expert. Generate exactly ${quantity} features based on the provided initiative.
+
+${workflowContext}
+
+IMPORTANT:
+- Generate exactly ${quantity} features
+- Features must be actionable, valuable, and decomposable into epics
+- Each feature must have unique, detailed descriptions and rationale
+- Focus on user-facing capabilities and system functionality
+${additionalContext ? `\n\nADDITIONAL CONTEXT: ${additionalContext}` : ''}
+
+Generate features as PURE JSON (no markdown, no code blocks):
+{
+  "features": [
+    {
+      "title": "Feature title",
+      "description": "Detailed description",
+      "rationale": "Why this feature is necessary",
+      "category": "functional",
+      "priority": "high|medium|low",
+      "acceptanceCriteria": ["criteria 1", "criteria 2"],
+      "businessValue": "Business value statement"
+    }
+  ]
+}`;
+    
+    const userPrompt = `Initiative:
+Title: ${initiative.title || 'N/A'}
+Description: ${initiative.description || 'N/A'}
+Business Value: ${initiative.businessValue || 'N/A'}`;
+    
+    const result = await this.callLLM(systemPrompt, userPrompt);
+    
+    try {
+      const parsed = JSON.parse(result.content);
+      return {
+        features: parsed.features || [],
+        tokensUsed: result.tokensUsed,
+        promptUsed: systemPrompt
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse features response: ${error}`);
+    }
+  }
+
+  async generateEpicsWithQuantity(feature: any, initiative?: any, businessBrief?: any, quantity: number = 3, additionalContext?: string): Promise<{ epics: any[]; tokensUsed: number; promptUsed: string }> {
+    const workflowContext = getAIPromptContext();
+    
+    const systemPrompt = `You are a senior product manager and epic decomposition expert. Generate exactly ${quantity} epics based on the provided feature.
+
+${workflowContext}
+
+IMPORTANT:
+- Generate exactly ${quantity} epics
+- Epics must be substantial pieces of work that can be completed in multiple sprints
+- Each epic should be decomposable into user stories
+- Focus on coherent chunks of functionality
+${additionalContext ? `\n\nADDITIONAL CONTEXT: ${additionalContext}` : ''}
+
+Generate epics as PURE JSON (no markdown, no code blocks):
+{
+  "epics": [
+    {
+      "title": "Epic title",
+      "description": "Detailed description",
+      "rationale": "Why this epic is necessary",
+      "category": "functional",
+      "priority": "high|medium|low",
+      "acceptanceCriteria": ["criteria 1", "criteria 2"],
+      "businessValue": "Business value statement",
+      "estimatedEffort": "Medium",
+      "sprintEstimate": 2
+    }
+  ]
+}`;
+    
+    const userPrompt = `Feature:
+Title: ${feature.title || 'N/A'}
+Description: ${feature.description || 'N/A'}
+Business Value: ${feature.businessValue || 'N/A'}`;
+    
+    const result = await this.callLLM(systemPrompt, userPrompt);
+    
+    try {
+      const parsed = JSON.parse(result.content);
+      return {
+        epics: parsed.epics || [],
+        tokensUsed: result.tokensUsed,
+        promptUsed: systemPrompt
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse epics response: ${error}`);
+    }
+  }
+
+  async generateStoriesWithQuantity(epic: any, businessBrief?: any, initiative?: any, feature?: any, quantity: number = 5, additionalContext?: string): Promise<{ stories: any[]; tokensUsed: number; promptUsed: string }> {
+    const workflowContext = getAIPromptContext();
+    
+    const systemPrompt = `You are a senior product manager and user story expert. Generate exactly ${quantity} user stories based on the provided epic.
+
+${workflowContext}
+
+IMPORTANT:
+- Generate exactly ${quantity} user stories
+- Stories should follow the "As a... I want... So that..." format in the description
+- Each story should be completable within a single sprint
+- Focus on specific user value and testable outcomes
+${additionalContext ? `\n\nADDITIONAL CONTEXT: ${additionalContext}` : ''}
+
+Generate stories as PURE JSON (no markdown, no code blocks):
+{
+  "stories": [
+    {
+      "title": "Story title",
+      "description": "As a [user] I want [functionality] so that [benefit]",
+      "rationale": "Why this story provides value",
+      "category": "functional",
+      "priority": "high|medium|low",
+      "acceptanceCriteria": ["Given... When... Then...", "criteria 2"],
+      "businessValue": "Business value statement",
+      "storyPoints": 3,
+      "labels": ["frontend", "backend"],
+      "testingNotes": "Testing considerations"
+    }
+  ]
+}`;
+    
+    const userPrompt = `Epic:
+Title: ${epic.title || 'N/A'}
+Description: ${epic.description || 'N/A'}
+Business Value: ${epic.businessValue || 'N/A'}`;
+    
+    const result = await this.callLLM(systemPrompt, userPrompt);
+    
+    try {
+      const parsed = JSON.parse(result.content);
+      return {
+        stories: parsed.stories || [],
+        tokensUsed: result.tokensUsed,
+        promptUsed: systemPrompt
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse stories response: ${error}`);
     }
   }
 } 

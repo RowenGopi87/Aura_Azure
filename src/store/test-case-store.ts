@@ -39,6 +39,8 @@ interface TestCaseStore {
   getTestCasesByStatus: (status: TestCase['status']) => TestCase[];
   executeTestCase: (id: string, result: 'passed' | 'failed' | 'blocked', actualResult?: string) => void;
   updateTestCaseStatus: (id: string, status: TestCase['status']) => void;
+  loadFromDatabase: () => Promise<void>;
+  clearTestCases: () => void;
 }
 
 export const useTestCaseStore = create<TestCaseStore>()(
@@ -141,6 +143,49 @@ export const useTestCaseStore = create<TestCaseStore>()(
           : testCase
       ),
     }));
+  },
+
+  loadFromDatabase: async () => {
+    try {
+      console.log('🧪 Loading test cases from database...');
+      
+      const response = await fetch('/api/test-cases/list');
+      const data = await response.json();
+      
+      if (data.success) {
+        const testCases: TestCase[] = data.data.map((dbTestCase: any) => ({
+          id: dbTestCase.id,
+          workItemId: dbTestCase.workItemId,
+          workItemType: dbTestCase.workItemType,
+          title: dbTestCase.description.split('\n')[0] || 'Untitled Test', // Use first line as title
+          summary: dbTestCase.description.split('\n')[0] || 'Test case summary',
+          description: dbTestCase.description,
+          type: 'positive' as const, // Default since database doesn't have this field
+          testPyramidType: dbTestCase.testType as any || 'functional',
+          status: dbTestCase.status,
+          priority: 'medium' as const, // Default since database doesn't have this field
+          preconditions: [], // Parse from steps if needed
+          steps: dbTestCase.steps ? dbTestCase.steps.split('\n').filter(Boolean) : [],
+          expectedResult: dbTestCase.expectedResult || '',
+          createdBy: 'System',
+          createdAt: new Date(dbTestCase.createdAt),
+          lastExecuted: dbTestCase.updatedAt ? new Date(dbTestCase.updatedAt) : undefined,
+          tags: []
+        }));
+
+        set({ testCases });
+        console.log(`✅ Loaded ${testCases.length} test cases from database`);
+      } else {
+        console.error('❌ Failed to load test cases:', data.error);
+      }
+    } catch (error) {
+      console.error('❌ Error loading test cases from database:', error);
+    }
+  },
+
+  clearTestCases: () => {
+    console.log('🗑️ Clearing all test cases from store');
+    set({ testCases: [], selectedTestCase: null });
   },
 }),
 {

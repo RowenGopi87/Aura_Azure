@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databaseService } from '@/lib/database';
+import { createConnection } from '@/lib/database';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -21,51 +21,50 @@ export async function DELETE(request: NextRequest) {
 
     console.log('🔍 Attempting to delete initiative with ID:', id);
 
-    await databaseService.initialize();
+    // Use simple database connection (same as portfolios API)
+    const connection = await createConnection();
 
     // Check if initiative exists
-    const initiative = await databaseService.getInitiative(id);
-    if (!initiative) {
+    const [initiativeCheck] = await connection.execute(
+      'SELECT COUNT(*) as count FROM initiatives WHERE id = ?',
+      [id]
+    ) as any;
+
+    if (initiativeCheck[0].count === 0) {
+      await connection.end();
       return NextResponse.json(
         {
           success: false,
           error: 'Initiative not found',
-          message: `No initiative found with ID: ${id}`
+          message: `Initiative with ID ${id} does not exist`
         },
         { status: 404 }
       );
     }
 
-    // Delete from database (this will also cascade delete related features, epics, stories)
-    const deleted = await databaseService.deleteInitiative(id);
+    // Delete cascading: stories -> epics -> features -> initiative
+    await connection.execute('DELETE s FROM stories s JOIN epics e ON s.epic_id = e.id JOIN features f ON e.feature_id = f.id WHERE f.initiative_id = ?', [id]);
+    await connection.execute('DELETE e FROM epics e JOIN features f ON e.feature_id = f.id WHERE f.initiative_id = ?', [id]);
+    await connection.execute('DELETE FROM features WHERE initiative_id = ?', [id]);
+    await connection.execute('DELETE FROM initiatives WHERE id = ?', [id]);
 
-    if (!deleted) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to delete initiative',
-          message: `Could not delete initiative with ID: ${id}`
-        },
-        { status: 500 }
-      );
-    }
+    await connection.end();
 
-    console.log('✅ Initiative deleted successfully:', id);
+    console.log(`✅ Successfully deleted initiative: ${id}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Initiative deleted successfully',
-      data: { id, title: initiative.title }
+      message: `Initiative ${id} deleted successfully`
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Failed to delete initiative:', error);
-
+    
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to delete initiative',
-        message: error.message
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
       },
       { status: 500 }
     );

@@ -525,8 +525,74 @@ export default function UseCasesPage() {
     setIsDialogOpen(true);
   };
 
-  const handleStatusChange = (id: string, newStatus: any) => {
-    updateUseCase(id, { status: newStatus });
+  const handleStatusChange = async (id: string, newStatus: any) => {
+    try {
+      // Update store immediately for responsive UI
+      updateUseCase(id, { status: newStatus });
+      
+      // Save to database
+      const useCase = useCases.find(uc => uc.id === id);
+      if (!useCase) {
+        console.error('Use case not found for status update:', id);
+        return;
+      }
+
+      const response = await fetch(`/api/business-briefs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...useCase,
+          status: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to update status in database:', errorData);
+        
+        // Revert the store update if database save failed
+        updateUseCase(id, { status: useCase.status });
+        
+        // Show error notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        notification.textContent = `❌ Failed to update status: ${errorData.error || 'Unknown error'}`;
+        document.body.appendChild(notification);
+        setTimeout(() => document.body.removeChild(notification), 5000);
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        console.log(`✅ Status updated successfully for: ${useCase.title}`);
+        
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        notification.textContent = `✅ Status updated to: ${newStatus}`;
+        document.body.appendChild(notification);
+        setTimeout(() => document.body.removeChild(notification), 3000);
+      } else {
+        throw new Error(result.error || 'Failed to update status');
+      }
+
+    } catch (error) {
+      console.error('Error updating status:', error);
+      
+      // Revert the store update if there was an error
+      const originalUseCase = useCases.find(uc => uc.id === id);
+      if (originalUseCase) {
+        updateUseCase(id, { status: originalUseCase.status });
+      }
+      
+      // Show error notification
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      notification.textContent = `❌ Failed to update status: ${errorMessage}`;
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 5000);
+    }
   };
 
   const [isGeneratingRequirements, setIsGeneratingRequirements] = useState<string | null>(null);

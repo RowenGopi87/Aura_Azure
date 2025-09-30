@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { LLMService } from '@/lib/services/llm-service';
+import { createConnection } from '@/lib/database';
 
 // Request validation schema for features
 const generateFeaturesSchema = z.object({
@@ -20,12 +21,12 @@ const generateFeaturesSchema = z.object({
     title: z.string(),
     businessObjective: z.string(),
     quantifiableBusinessOutcomes: z.string(),
-    inScope: z.string().optional(),
-    impactOfDoNothing: z.string().optional(),
-    happyPath: z.string().optional(),
-    exceptions: z.string().optional(),
-    impactedEndUsers: z.string().optional(),
-    changeImpactExpected: z.string().optional(),
+    inScope: z.string().nullable().optional(),
+    impactOfDoNothing: z.string().nullable().optional(),
+    happyPath: z.string().nullable().optional(),
+    exceptions: z.string().nullable().optional(),
+    impactedEndUsers: z.string().nullable().optional(),
+    changeImpactExpected: z.string().nullable().optional(),
   }).optional(),
   llmSettings: z.object({
     provider: z.string(),
@@ -50,13 +51,62 @@ export async function POST(request: NextRequest) {
     // Generate features through iterative process with full context
     const result = await llmService.generateFeatures(initiativeData, businessBriefData);
 
+    console.log(`💾 Saving ${result.features.length} generated features to database...`);
+
+    // Connect to database and save features
+    const connection = await createConnection();
+    const savedFeatures = [];
+
+    for (const feature of result.features) {
+      try {
+        const featureId = `feat-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 6)}`;
+        
+        await connection.execute(`
+          INSERT INTO features (
+            id, initiative_id, title, description, business_value, acceptance_criteria,
+            priority, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          featureId,
+          initiativeId,
+          feature.title,
+          feature.description || '',
+          feature.businessValue || '',
+          JSON.stringify(feature.acceptanceCriteria || []),
+          feature.priority || 'medium',
+          'planning'
+        ]);
+
+        savedFeatures.push({
+          id: featureId,
+          initiativeId,
+          businessBriefId,
+          title: feature.title,
+          description: feature.description,
+          businessValue: feature.businessValue,
+          acceptanceCriteria: feature.acceptanceCriteria,
+          priority: feature.priority,
+          status: 'planning'
+        });
+
+        console.log(`✅ Saved feature: ${feature.title} (ID: ${featureId})`);
+      } catch (saveError) {
+        console.error(`❌ Failed to save feature: ${feature.title}`, saveError);
+      }
+    }
+
+    await connection.end();
+    console.log(`✅ Successfully saved ${savedFeatures.length}/${result.features.length} features to database`);
+
     return NextResponse.json({
       success: true,
       data: {
         initiativeId,
         businessBriefId,
-        features: result.features,
+        features: savedFeatures, // Return the saved features with database IDs
         metadata: {
+          generated: result.features.length,
+          saved: savedFeatures.length,
           iterationCount: result.iterationCount,
           totalTokensUsed: result.totalTokensUsed,
           processingTime: result.processingTime,

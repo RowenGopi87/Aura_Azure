@@ -1,7 +1,8 @@
 // Work Item Database Integration Service
 // Handles saving work items to MariaDB and indexing them for RAG search
 
-import { databaseService, vectorStore, embeddingService } from './index';
+import { vectorStore, embeddingService } from './index';
+import { createConnection } from './index';
 import { RAG_CONFIG } from '../rag/config';
 import { workItemIndexer, WorkItemForIndexing } from './work-item-indexer';
 
@@ -90,70 +91,94 @@ export class WorkItemDatabaseService {
         case 'feature':
           const normalizedFeatureInitiativeId = this.normalizeId(item.initiativeId);
           console.log(`🔗 Feature ${item.id} references initiative: ${item.initiativeId} → ${normalizedFeatureInitiativeId}`);
-          await databaseService.createFeature({
-            id: this.normalizeId(item.id),
-            initiativeId: normalizedFeatureInitiativeId,
-            title: item.title,
-            description: item.description || '',
-            businessValue: item.businessValue || '',
-            acceptanceCriteria: Array.isArray(item.acceptanceCriteria) 
+          
+          // Use reliable database connection
+          const featureConnection = await createConnection();
+          await featureConnection.execute(`
+            INSERT INTO features (
+              id, initiative_id, title, description, business_value, acceptance_criteria,
+              priority, status, assigned_to, story_points, workflow_stage, completion_percentage,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          `, [
+            this.normalizeId(item.id),
+            normalizedFeatureInitiativeId,
+            item.title,
+            item.description || '',
+            item.businessValue || '',
+            Array.isArray(item.acceptanceCriteria) 
               ? JSON.stringify(item.acceptanceCriteria) 
               : item.acceptanceCriteria || '[]',
-            priority: item.priority || 'medium',
-            status: this.normalizeWorkItemStatus(item.status),
-            assignedTo: item.assignedTo,
-            storyPoints: item.storyPoints || 0,
-            workflowStage: this.mapStatusToWorkflowStage(item.status),
-            completionPercentage: this.calculateCompletionPercentage(item.status),
-            createdAt: item.createdAt || new Date(),
-            updatedAt: item.updatedAt || new Date()
-          });
+            item.priority || 'medium',
+            this.normalizeWorkItemStatus(item.status),
+            item.assignedTo,
+            item.storyPoints || 0,
+            this.mapStatusToWorkflowStage(item.status),
+            this.calculateCompletionPercentage(item.status)
+          ]);
+          await featureConnection.end();
           break;
           
         case 'epic':
           const normalizedEpicFeatureId = this.normalizeId(item.featureId);
           console.log(`🔗 Epic ${item.id} references feature: ${item.featureId} → ${normalizedEpicFeatureId}`);
-          await databaseService.createEpic({
-            id: this.normalizeId(item.id),
-            featureId: normalizedEpicFeatureId,
-            title: item.title,
-            description: item.description || '',
-            businessValue: item.businessValue || '',
-            acceptanceCriteria: Array.isArray(item.acceptanceCriteria) 
+          
+          // Use reliable database connection
+          const epicConnection = await createConnection();
+          await epicConnection.execute(`
+            INSERT INTO epics (
+              id, feature_id, title, description, business_value, acceptance_criteria,
+              priority, status, assigned_to, story_points, workflow_stage, completion_percentage,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          `, [
+            this.normalizeId(item.id),
+            normalizedEpicFeatureId,
+            item.title,
+            item.description || '',
+            item.businessValue || '',
+            Array.isArray(item.acceptanceCriteria) 
               ? JSON.stringify(item.acceptanceCriteria) 
               : item.acceptanceCriteria || '[]',
-            priority: item.priority || 'medium',
-            status: this.normalizeWorkItemStatus(item.status),
-            assignedTo: item.assignedTo,
-            storyPoints: item.storyPoints || 0,
-            workflowStage: this.mapStatusToWorkflowStage(item.status),
-            completionPercentage: this.calculateCompletionPercentage(item.status),
-            createdAt: item.createdAt || new Date(),
-            updatedAt: item.updatedAt || new Date()
-          });
+            item.priority || 'medium',
+            this.normalizeWorkItemStatus(item.status),
+            item.assignedTo,
+            item.storyPoints || 0,
+            this.mapStatusToWorkflowStage(item.status),
+            this.calculateCompletionPercentage(item.status)
+          ]);
+          await epicConnection.end();
           break;
           
         case 'story':
           const normalizedStoryEpicId = this.normalizeId(item.epicId);
           console.log(`🔗 Story ${item.id} references epic: ${item.epicId} → ${normalizedStoryEpicId}`);
-          await databaseService.createStory({
-            id: this.normalizeId(item.id),
-            epicId: normalizedStoryEpicId,
-            title: item.title,
-            description: item.description || '',
-            userStory: item.userStory || '',
-            acceptanceCriteria: Array.isArray(item.acceptanceCriteria) 
+          
+          // Use reliable database connection
+          const storyConnection = await createConnection();
+          await storyConnection.execute(`
+            INSERT INTO stories (
+              id, epic_id, title, description, user_story, acceptance_criteria,
+              priority, status, assigned_to, story_points, workflow_stage, completion_percentage,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          `, [
+            this.normalizeId(item.id),
+            normalizedStoryEpicId,
+            item.title,
+            item.description || '',
+            item.userStory || '',
+            Array.isArray(item.acceptanceCriteria) 
               ? JSON.stringify(item.acceptanceCriteria) 
               : item.acceptanceCriteria || '[]',
-            priority: item.priority || 'medium',
-            status: item.status || 'backlog',
-            assignedTo: item.assignedTo,
-            storyPoints: item.storyPoints || 0,
-            workflowStage: this.mapStatusToWorkflowStage(item.status),
-            completionPercentage: this.calculateCompletionPercentage(item.status),
-            createdAt: item.createdAt || new Date(),
-            updatedAt: item.updatedAt || new Date()
-          });
+            item.priority || 'medium',
+            item.status || 'backlog',
+            item.assignedTo,
+            item.storyPoints || 0,
+            this.mapStatusToWorkflowStage(item.status),
+            this.calculateCompletionPercentage(item.status)
+          ]);
+          await storyConnection.end();
           break;
       }
       

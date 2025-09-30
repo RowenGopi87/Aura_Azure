@@ -181,8 +181,8 @@ export class DatabaseSchema {
       await this.createDocumentsTable();
       await this.createSafeMappingsTable();
       
-      // Seed portfolios with company-specific data
-      await this.seedPortfolios();
+      // Seed portfolios with company-specific data - DISABLED for Docker (using init script instead)
+      // await this.seedPortfolios();
       
       console.log('✅ Aura database schema initialized successfully');
       
@@ -465,69 +465,73 @@ export class DatabaseSchema {
   }
 
   private static async seedPortfolios(): Promise<void> {
-    console.log('🌱 Seeding portfolio data...');
+    console.log('🌱 Checking portfolio data...');
     
-    const portfolios = [
-      {
-        id: 'PORTFOLIO-WEB-MOBILE',
-        name: 'Web & Mobile',
-        description: 'Customer-facing web and mobile applications development',
-        function: 'Develops and maintains customer-facing digital touchpoints including websites, mobile apps, and progressive web applications',
-        color: '#3B82F6'
-      },
-      {
-        id: 'PORTFOLIO-CUSTOMER',
-        name: 'Customer Portfolio',
-        description: 'Customer experience and engagement solutions',
-        function: 'Manages customer-specific projects and specialized customer websites like rugby sevens, events, and customer portal solutions',
-        color: '#10B981'
-      },
-      {
-        id: 'PORTFOLIO-COMMERCIAL',
-        name: 'Commercial Portfolio',
-        description: 'Agent systems and commercial booking platforms',
-        function: 'Handles commercial booking systems, agent platforms like ResConnect, and B2B customer solutions for travel agents and corporate clients',
-        color: '#F59E0B'
-      },
-      {
-        id: 'PORTFOLIO-GROUP-SERVICE',
-        name: 'Group Service Portfolio',
-        description: 'Internal systems and payment infrastructure',
-        function: 'Manages internal operations including payroll systems, HR processes, hiring platforms, and payment gateway infrastructure for web and mobile frontends',
-        color: '#8B5CF6'
-      },
-      {
-        id: 'PORTFOLIO-DONATA',
-        name: 'Donata Portfolio',
-        description: 'Ground operations and baggage handling systems',
-        function: 'Handles below-the-wing airline operations including ground operations, baggage handling, cargo management, and airport operational systems',
-        color: '#EF4444'
-      }
-    ];
-
-    for (const portfolio of portfolios) {
-      const checkQuery = `SELECT id FROM portfolios WHERE id = ?`;
-      const [existing] = await db.execute(checkQuery, [portfolio.id]) as any[];
+    try {
+      // Check if portfolios already exist (from initialization script)
+      const countQuery = `SELECT COUNT(*) as count FROM portfolios`;
+      const [countResult] = await db.execute(countQuery) as any[];
+      const existingCount = countResult[0]?.count || 0;
       
-      if (existing.length === 0) {
-        const insertQuery = `
-          INSERT INTO portfolios (id, name, description, function, color)
-          VALUES (?, ?, ?, ?, ?)
-        `;
-        
-        await db.execute(insertQuery, [
-          portfolio.id,
-          portfolio.name,
-          portfolio.description,
-          portfolio.function,
-          portfolio.color
-        ]);
-        
-        console.log(`✅ Created portfolio: ${portfolio.name}`);
+      if (existingCount > 0) {
+        console.log(`✅ Found ${existingCount} existing portfolios, skipping seeding`);
+        return;
       }
+      
+      console.log('📋 No portfolios found, creating default portfolios...');
+      
+      const portfolios = [
+        {
+          id: 'default-portfolio',
+          name: 'Default Portfolio',
+          description: 'Default portfolio for initial setup',
+          function: 'General Development',
+          color: '#3B82F6'
+        },
+        {
+          id: 'customer-experience',
+          name: 'Customer Experience',
+          description: 'Customer-facing features and improvements',
+          function: 'Customer Experience',
+          color: '#10B981'
+        }
+      ];
+
+      for (const portfolio of portfolios) {
+        try {
+          const checkQuery = `SELECT id FROM portfolios WHERE id = ?`;
+          const [existing] = await db.execute(checkQuery, [portfolio.id]) as any[];
+          
+          if (!existing || existing.length === 0) {
+            const insertQuery = `
+              INSERT INTO portfolios (id, name, description, function, color)
+              VALUES (?, ?, ?, ?, ?)
+            `;
+            
+            await db.execute(insertQuery, [
+              portfolio.id,
+              portfolio.name,
+              portfolio.description,
+              portfolio.function,
+              portfolio.color
+            ]);
+            
+            console.log(`✅ Created portfolio: ${portfolio.name}`);
+          } else {
+            console.log(`📋 Portfolio already exists: ${portfolio.name}`);
+          }
+        } catch (portfolioError) {
+          console.error(`❌ Failed to create portfolio ${portfolio.name}:`, portfolioError);
+          // Continue with other portfolios
+        }
+      }
+      
+      console.log('✅ Portfolio data seeding completed');
+    } catch (error) {
+      console.error('❌ Error in portfolio seeding:', error);
+      // Don't throw error - this is not critical for application startup
+      console.log('⚠️ Portfolio seeding failed, but application can continue');
     }
-    
-    console.log('✅ Portfolio data seeded successfully');
   }
 }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { testCase, llmProvider = 'google', model = 'gemini-2.5-pro' } = await request.json();
+    const { testCase, llmProvider = 'google', model = 'gemini-2.5-pro', apiKey } = await request.json();
 
     // Validate request
     if (!testCase) {
@@ -12,7 +12,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward request to MCP server
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'API key is required for test execution' },
+        { status: 400 }
+      );
+    }
+
+    // Forward request to MCP server with API key
     const response = await fetch(`${process.env.MCP_BRIDGE_URL || 'http://localhost:8000'}/execute-test-case`, {
       method: 'POST',
       headers: {
@@ -21,7 +28,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         testCase,
         llm_provider: llmProvider,
-        model: model
+        model: model,
+        api_key: apiKey
       })
     });
 
